@@ -1,19 +1,26 @@
 package dto
 
-// RegisterInput — тело запроса регистрации (см. backend_spec.md).
+// Тело запроса регистрации.
 type RegisterInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
 }
 
-// LoginInput — тело запроса входа (см. backend_spec.md).
+// Тело запроса входа.
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// AuthResponse — ответ с токеном (см. backend_spec.md).
+// Ответ с токеном.
 type AuthResponse struct {
 	Token string `json:"token"`
+}
+
+// Ответ с информацией о пользователе.
+type MeResponse struct {
+	ID    int64  `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }
