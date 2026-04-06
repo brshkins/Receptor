@@ -24,6 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("DB_URL:", cfg.DBURL)
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, cfg.DBURL)

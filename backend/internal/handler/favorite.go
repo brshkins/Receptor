@@ -10,17 +10,17 @@ import (
 	"receptor/backend/internal/service"
 )
 
-// FavoriteHandler exposes favorites HTTP endpoints (backend_spec §7 Favorites).
+// Предоставляет HTTP-эндпоинты для избранного.
 type FavoriteHandler struct {
 	svc service.FavoriteService
 }
 
-// NewFavoriteHandler wires favorites HTTP handlers.
+// Создает новый экземпляр FavoriteHandler.
 func NewFavoriteHandler(svc service.FavoriteService) *FavoriteHandler {
 	return &FavoriteHandler{svc: svc}
 }
 
-// Add handles POST /favorites/:id (requires JWT middleware).
+// Добавление рецепты в избранное.
 func (h *FavoriteHandler) Add(c *gin.Context) {
 	uid, ok := middleware.UserID(c)
 	if !ok {
@@ -39,7 +39,7 @@ func (h *FavoriteHandler) Add(c *gin.Context) {
 	JSONData(c, http.StatusOK, nil)
 }
 
-// Remove handles DELETE /favorites/:id (requires JWT middleware).
+// Удаление рецепта из избранного.
 func (h *FavoriteHandler) Remove(c *gin.Context) {
 	uid, ok := middleware.UserID(c)
 	if !ok {
@@ -58,7 +58,7 @@ func (h *FavoriteHandler) Remove(c *gin.Context) {
 	JSONData(c, http.StatusOK, nil)
 }
 
-// List handles GET /favorites (requires JWT middleware).
+// Получение списка избранных рецептов.
 func (h *FavoriteHandler) List(c *gin.Context) {
 	uid, ok := middleware.UserID(c)
 	if !ok {

@@ -10,17 +10,17 @@ import (
 	"receptor/backend/internal/service"
 )
 
-// RecipeHandler exposes recipe list/detail HTTP endpoints (backend_spec §7 Recipes).
+// Предоставляет HTTP-эндпоинты для списка и карточки рецепта.
 type RecipeHandler struct {
 	svc service.RecipeService
 }
 
-// NewRecipeHandler wires recipe HTTP handlers.
+// Создает новый экземпляр RecipeHandler.
 func NewRecipeHandler(svc service.RecipeService) *RecipeHandler {
 	return &RecipeHandler{svc: svc}
 }
 
-// List handles GET /recipes with optional search, category, max_time, sort.
+// Получение списка рецептов с фильтрами.
 func (h *RecipeHandler) List(c *gin.Context) {
 	filter, aborted := parseRecipeFilter(c)
 	if aborted {
@@ -63,7 +63,7 @@ func parseRecipeFilter(c *gin.Context) (dto.RecipeFilter, bool) {
 	return f, false
 }
 
-// GetByID handles GET /recipes/:id.
+// Получение карточки рецепта по ID.
 func (h *RecipeHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {

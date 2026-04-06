@@ -11,7 +11,7 @@ import (
 
 const userIDKey = "jwt_user_id"
 
-// UserID returns the authenticated user id set by JWT middleware.
+// Возвращает ID авторизованного пользователя.
 func UserID(c *gin.Context) (int64, bool) {
 	v, ok := c.Get(userIDKey)
 	if !ok {
@@ -21,7 +21,7 @@ func UserID(c *gin.Context) (int64, bool) {
 	return id, ok
 }
 
-// JWT validates Authorization: Bearer <token>, HS256 with secret, sets user id in context.
+// Проверяет JWT-токен в заголовке Authorization и устанавливает ID пользователя.
 func JWT(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := c.GetHeader("Authorization")

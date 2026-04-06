@@ -10,17 +10,17 @@ import (
 	"receptor/backend/internal/service"
 )
 
-// AuthHandler exposes auth HTTP endpoints (backend_spec §7 Auth).
+// Предоставляет HTTP-эндпоинты для аутентификации.
 type AuthHandler struct {
 	svc service.AuthService
 }
 
-// NewAuthHandler wires auth HTTP handlers.
+// Создает новый экземпляр AuthHandler.
 func NewAuthHandler(svc service.AuthService) *AuthHandler {
 	return &AuthHandler{svc: svc}
 }
 
-// Register handles POST /auth/register.
+// Регистрация нового пользователя.
 func (h *AuthHandler) Register(c *gin.Context) {
 	var in dto.RegisterInput
 	if err := c.ShouldBindJSON(&in); err != nil {
@@ -35,7 +35,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	JSONOK(c, out)
 }
 
-// Login handles POST /auth/login.
+// Вход в систему.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var in dto.LoginInput
 	if err := c.ShouldBindJSON(&in); err != nil {
@@ -50,7 +50,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	JSONOK(c, out)
 }
 
-// Me handles GET /auth/me (requires JWT middleware).
+// Получение информации о текущем пользователе.
 func (h *AuthHandler) Me(c *gin.Context) {
 	uid, ok := middleware.UserID(c)
 	if !ok {

@@ -9,17 +9,17 @@ import (
 	"receptor/backend/internal/service"
 )
 
-// MatchHandler exposes match HTTP endpoints (backend_spec §7 Match).
+// Предоставляет HTTP-эндпоинты для подбора рецептов по ингредиентам.
 type MatchHandler struct {
 	svc service.MatchService
 }
 
-// NewMatchHandler wires match HTTP handlers.
+// Создает новый экземпляр MatchHandler.
 func NewMatchHandler(svc service.MatchService) *MatchHandler {
 	return &MatchHandler{svc: svc}
 }
 
-// Match handles POST /match/by-ingredients.
+// Подбор рецептов по ингредиентам.
 func (h *MatchHandler) Match(c *gin.Context) {
 	var req dto.MatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

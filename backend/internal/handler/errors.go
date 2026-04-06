@@ -11,7 +11,7 @@ import (
 	"receptor/backend/internal/service"
 )
 
-// RespondError maps service/repository errors to HTTP (handler stays free of business rules).
+// Преобразует ошибки сервиса и репозитория в HTTP-ответы.
 func RespondError(c *gin.Context, err error) {
 	var pgErr *pgconn.PgError
 	switch {

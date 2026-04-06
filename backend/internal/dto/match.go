@@ -1,11 +1,11 @@
 package dto
 
-// MatchRequest — тело POST /match/by-ingredients (см. backend_spec.md).
+// Тело POST /match/by-ingredients.
 type MatchRequest struct {
 	Ingredients []string `json:"ingredients"`
 }
 
-// MatchResponse — элемент результата подбора рецептов (см. backend_spec.md).
+// Элемент результата подбора рецептов.
 type MatchResponse struct {
 	RecipeID           int64    `json:"recipe_id"`
 	Title              string   `json:"title"`

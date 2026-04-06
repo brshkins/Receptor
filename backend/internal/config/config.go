@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds runtime settings from the environment (see backend_spec §2).
+// Параметры среды выполнения.
 type Config struct {
 	DBURL     string
 	JWTSecret string
@@ -16,7 +16,7 @@ type Config struct {
 	MLURL     string
 }
 
-// Load reads optional .env then required variables.
+// Загружает параметры из .env и обязательных переменных.
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
