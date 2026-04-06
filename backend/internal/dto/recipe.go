@@ -1,6 +1,6 @@
 package dto
 
-// RecipeResponse — элемент списка/карточки рецепта в API (см. backend_spec.md).
+// Элемент списка/карточки рецепта в API.
 type RecipeResponse struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
@@ -9,7 +9,7 @@ type RecipeResponse struct {
 	Category    string `json:"category"`
 }
 
-// RecipeSort — значение query sort для списка рецептов (см. backend_spec.md, GET /recipes).
+// Значение query sort для списка рецептов.
 type RecipeSort string
 
 const (
@@ -19,7 +19,7 @@ const (
 	RecipeSortTimeDesc     RecipeSort = "time_desc"
 )
 
-// RecipeFilter — фильтры списка рецептов (search, category, max_time, sort; см. backend_spec.md).
+// Фильтры списка рецептов.
 type RecipeFilter struct {
 	Search   *string
 	Category *string

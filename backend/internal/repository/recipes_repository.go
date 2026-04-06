@@ -111,7 +111,6 @@ func recipeOrderByClause(sort dto.RecipeSort) string {
 	}
 }
 
-// escapeLikePattern экранирует спецсимволы ILIKE для использования с ESCAPE '!'.
 func escapeLikePattern(s string) string {
 	s = strings.ReplaceAll(s, "!", "!!")
 	s = strings.ReplaceAll(s, "%", "!%")

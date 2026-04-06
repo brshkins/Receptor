@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// Recipe соответствует таблице рецептов в БД.
+// Соответствует таблице рецептов в БД.
 type Recipe struct {
 	ID          int64
 	Title       string

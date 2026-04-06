@@ -11,8 +11,6 @@ import (
 	"receptor/backend/internal/repository"
 )
 
-// matchService использует пул БД для JOIN recipes ↔ recipe_ingredients ↔ ingredients:
-// в контрактах repository нет метода чтения связей; SQL остаётся в одном запросе без изменения пакета repository.
 type matchService struct {
 	db          *pgxpool.Pool
 	ingredients repository.IngredientsRepository
