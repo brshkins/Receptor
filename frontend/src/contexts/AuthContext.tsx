@@ -1,5 +1,7 @@
+// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
+import apiClient from '../services/api';
 
 interface User {
   id: string;
@@ -25,13 +27,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      if (authService.isAuthenticated()) {
+      const token = localStorage.getItem('token');
+      if (token) {
         try {
           const userData = await authService.getMe();
           setUser(userData);
         } catch (error) {
           console.error('Failed to get user:', error);
-          authService.logout();
+          localStorage.removeItem('token');
         }
       }
       setIsLoading(false);
@@ -42,17 +45,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     const response = await authService.login({ email, password });
+    localStorage.setItem('token', response.token);
     setUser(response.user);
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await authService.register({ name, email, password });
+    localStorage.setItem('token', response.token);
     setUser(response.user);
   };
 
   const logout = () => {
-    authService.logout();
+    localStorage.removeItem('token');
     setUser(null);
+    window.location.href = '/';
   };
 
   const value: AuthContextType = {

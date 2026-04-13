@@ -1,3 +1,4 @@
+// src/services/authService.ts
 import { apiClient } from './api';
 
 export interface User {
@@ -26,17 +27,11 @@ export interface AuthResponse {
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/register', data);
-    if (response.token) {
-      localStorage.setItem('token', response.token);
-    }
     return response;
   },
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    if (response.token) {
-      localStorage.setItem('token', response.token);
-    }
     return response;
   },
 
@@ -46,7 +41,6 @@ export const authService = {
 
   logout(): void {
     localStorage.removeItem('token');
-    window.location.href = '/auth';
   },
 
   isAuthenticated(): boolean {
