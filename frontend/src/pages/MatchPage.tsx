@@ -1,5 +1,5 @@
 // src/pages/MatchPage.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styles from './Pages.module.css';
 
 const MatchPage: React.FC = () => {
@@ -7,8 +7,9 @@ const MatchPage: React.FC = () => {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Популярные ингредиенты для быстрого выбора
   const popularIngredients = [
@@ -50,25 +51,37 @@ const MatchPage: React.FC = () => {
     // Имитация запроса к ИИ
     setTimeout(() => {
       setIsLoading(false);
-      // Здесь будет реальный запрос к API
       console.log('Поиск рецептов с ингредиентами:', ingredients);
     }, 2000);
   };
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = (files: FileList) => {
+    const newImages: string[] = [];
+    
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          newImages.push(result);
+          
+          // Когда все файлы загружены
+          if (newImages.length === files.length) {
+            setPreviewImages(prev => [...prev, ...newImages]);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
     
     // Имитация анализа фото ИИ
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      // Здесь будет реальный запрос к ML сервису
-      console.log('Анализ фото:', file.name);
-    }, 2000);
+    if (files.length > 0) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        console.log('Анализ фото:', files.length, 'изображений');
+      }, 2000);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -86,28 +99,50 @@ const MatchPage: React.FC = () => {
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleImageUpload(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleImageUpload(e.dataTransfer.files);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleImageUpload(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      handleImageUpload(e.target.files);
     }
   };
 
+  const handleRemoveImage = (index: number) => {
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllImages = () => {
+    setPreviewImages([]);
+  };
+
+  const handleAddMorePhotos = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAnalyzePhotos = () => {
+    if (previewImages.length === 0) return;
+    
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      console.log('Анализ', previewImages.length, 'фото');
+    }, 2000);
+  };
+
   return (
-  <div className={styles.pageContainer}>
-    <div className={styles.pageHeader}>
-      <h1 className={styles.pageTitle}>
-        <span className={styles.pageTitleEmoji}>🤖</span>
-        <span className={styles.pageTitleText}>ИИ-подбор рецептов</span>
-      </h1>
-      <p className={styles.pageDescription}>
-        Искусственный интеллект поможет найти идеальный рецепт из ваших продуктов
-      </p>
-    </div>
+    <div className={styles.pageContainer}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.pageTitleEmoji}>🤖</span>
+          <span className={styles.pageTitleText}>ИИ-подбор рецептов</span>
+        </h1>
+        <p className={styles.pageDescription}>
+          Искусственный интеллект поможет найти идеальный рецепт из ваших продуктов
+        </p>
+      </div>
 
       {/* Вкладки */}
       <div className={styles.matchTabs}>
@@ -220,58 +255,111 @@ const MatchPage: React.FC = () => {
             </div>
 
             {/* Зона загрузки */}
-            <div 
-              className={`${styles.uploadZone} ${dragActive ? styles.dragActive : ''} ${previewImage ? styles.hasPreview : ''}`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => !previewImage && document.getElementById('fileInput')?.click()}
-            >
-              {isLoading ? (
-                <div className={styles.aiProcessing}>
-                  <div className={styles.aiIcon}>🤖</div>
-                  <p className={styles.aiText}>ИИ анализирует фото...</p>
-                  <p className={styles.aiSubtext}>Это займёт несколько секунд</p>
-                  <div className={styles.loadingBar}>
-                    <div className={styles.loadingProgress}></div>
+            {previewImages.length === 0 ? (
+              <div 
+                className={`${styles.uploadZone} ${dragActive ? styles.dragActive : ''}`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className={styles.uploadIcon}>📸🍲</div>
+                <p className={styles.uploadText}>
+                  {dragActive ? 'Отпустите файлы здесь' : 'Перетащите фото сюда'}
+                </p>
+                <p className={styles.uploadHint}>
+                  или нажмите для выбора
+                </p>
+                <p className={styles.uploadFormats}>
+                  Поддерживаются JPG, PNG до 10MB
+                </p>
+                <p className={styles.uploadMultiple}>
+                  Можно загрузить несколько фото
+                </p>
+              </div>
+            ) : (
+              <div className={styles.previewSection}>
+                {/* Заголовок с информацией о фото */}
+                <div className={styles.previewHeader}>
+                  <h4>
+                    <span className={styles.previewIcon}>🖼️</span>
+                    Загружено фото: {previewImages.length}
+                  </h4>
+                  <div className={styles.previewActions}>
+                    <button 
+                      className={styles.addMoreButton}
+                      onClick={handleAddMorePhotos}
+                    >
+                      <span>+</span> Добавить
+                    </button>
+                    <button 
+                      className={styles.clearAllButton}
+                      onClick={handleClearAllImages}
+                    >
+                      <span>🗑️</span> Очистить
+                    </button>
                   </div>
                 </div>
-              ) : previewImage ? (
-                <div className={styles.previewContainer}>
-                  <img src={previewImage} alt="Preview" className={styles.previewImage} />
-                  <button 
-                    className={styles.changePhotoButton}
-                    onClick={() => {
-                      setPreviewImage(null);
-                      document.getElementById('fileInput')?.click();
-                    }}
+
+                {/* Сетка с превью */}
+                <div className={styles.previewGrid}>
+                  {previewImages.map((image, index) => (
+                    <div key={index} className={styles.previewItem}>
+                      <img 
+                        src={image} 
+                        alt={`Продукт ${index + 1}`} 
+                        className={styles.previewImage} 
+                      />
+                      <button 
+                        className={styles.removeImageButton}
+                        onClick={() => handleRemoveImage(index)}
+                        title="Удалить фото"
+                      >
+                        ✕
+                      </button>
+                      <span className={styles.imageNumber}>{index + 1}</span>
+                    </div>
+                  ))}
+                  
+                  {/* Кнопка добавления внутри сетки */}
+                  <div 
+                    className={styles.addMoreItem}
+                    onClick={handleAddMorePhotos}
                   >
-                    📸 Изменить фото
-                  </button>
+                    <span className={styles.addMoreIcon}>+</span>
+                    <span className={styles.addMoreText}>Добавить фото</span>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className={styles.uploadIcon}>📸🍲</div>
-                  <p className={styles.uploadText}>
-                    {dragActive ? 'Отпустите файл здесь' : 'Перетащите фото сюда'}
-                  </p>
-                  <p className={styles.uploadHint}>
-                    или нажмите для выбора
-                  </p>
-                  <p className={styles.uploadFormats}>
-                    Поддерживаются JPG, PNG до 10MB
-                  </p>
-                </>
-              )}
-              <input
-                id="fileInput"
-                type="file"
-                accept="image/*"
-                onChange={handleFileInput}
-                style={{ display: 'none' }}
-              />
-            </div>
+
+                {/* Кнопка анализа */}
+                <button 
+                  className={styles.analyzeButton}
+                  onClick={handleAnalyzePhotos}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className={styles.spinnerSmall}></span>
+                      ИИ анализирует фото...
+                    </>
+                  ) : (
+                    <>
+                      <span>🤖</span> Распознать продукты
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileInput}
+              style={{ display: 'none' }}
+            />
 
             {/* Подсказки */}
             <div className={styles.photoTips}>
