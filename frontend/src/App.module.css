@@ -1,0 +1,14 @@
+.app {
+  min-height: 100vh;
+  background: #FFF9F0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+}

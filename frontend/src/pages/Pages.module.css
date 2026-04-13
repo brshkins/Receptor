@@ -1,0 +1,250 @@
+/* Общие стили страниц */
+.pageContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.pageHeader {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 8px;
+}
+
+.pageDescription {
+  color: #8B6F5E;
+  font-size: 1.1rem;
+}
+
+/* Главная страница */
+.hero {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-xl);
+  margin-bottom: 48px;
+  color: white;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.heroSubtitle {
+  font-size: 1.3rem;
+  opacity: 0.95;
+  margin-bottom: 32px;
+}
+
+.heroButtons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.heroButton {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.heroButtonPrimary {
+  background: white;
+  color: var(--orange-deep);
+  box-shadow: var(--shadow-lg);
+}
+
+.heroButtonPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.heroButtonSecondary {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 2px solid white;
+  backdrop-filter: blur(10px);
+}
+
+.heroButtonSecondary:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.featureCard {
+  text-align: center;
+  padding: 32px 24px;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-md);
+}
+
+.featureIcon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.featureTitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--orange-deep);
+}
+
+.featureDescription {
+  color: #8B6F5E;
+  line-height: 1.6;
+}
+
+/* Профиль */
+.profileCard {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--orange-light);
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--orange-light);
+}
+
+.profileAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--gradient-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: white;
+  font-weight: 700;
+}
+
+.profileInfo h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4A3525;
+}
+
+.profileInfo p {
+  color: #8B6F5E;
+  margin-top: 4px;
+}
+
+.profileStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  text-align: center;
+  padding: 20px;
+  background: var(--yellow-soft);
+  border-radius: var(--radius-lg);
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+}
+
+.statLabel {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* Избранное */
+.favoritesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.emptyFavorites {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--orange-light);
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #8B6F5E;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  color: #A38B7A;
+}
+/* Добавь в конец файла */
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--orange-light);
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #8B6F5E;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  color: #A38B7A;
+}

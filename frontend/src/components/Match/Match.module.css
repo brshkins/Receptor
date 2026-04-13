@@ -1,0 +1,143 @@
+.matchPage {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.matchTabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  background: white;
+  padding: 8px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.matchTab {
+  flex: 1;
+  padding: 16px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #8B6F5E;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.matchTab:hover {
+  background: var(--yellow-soft);
+  color: var(--orange-deep);
+}
+
+.matchTab.active {
+  background: var(--gradient-warm);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+/* Загрузка фото */
+.uploadZone {
+  border: 3px dashed var(--orange-light);
+  border-radius: var(--radius-xl);
+  padding: 48px;
+  text-align: center;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.uploadZone:hover {
+  border-color: var(--orange-primary);
+  background: var(--yellow-soft);
+  transform: scale(1.02);
+}
+
+.uploadZone.dragging {
+  border-color: var(--orange-deep);
+  background: var(--orange-light);
+  transform: scale(1.05);
+}
+
+.uploadIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.uploadText {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--orange-deep);
+  margin-bottom: 8px;
+}
+
+.uploadHint {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--radius-lg);
+  margin-top: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+/* ИИ-статус */
+.aiProcessing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.aiIcon {
+  font-size: 72px;
+  animation: pulse-glow 2s infinite;
+  margin-bottom: 24px;
+}
+
+.aiText {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--orange-deep);
+  margin-bottom: 8px;
+}
+
+.aiSubtext {
+  color: #8B6F5E;
+}
+
+/* Результаты матча */
+.matchResults {
+  margin-top: 32px;
+  animation: slideUp 0.5s ease-out;
+}
+
+.matchHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: var(--gradient-soft);
+  border-radius: var(--radius-lg);
+}
+
+.matchHeaderIcon {
+  font-size: 32px;
+}
+
+.matchHeaderText {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--orange-deep);
+}

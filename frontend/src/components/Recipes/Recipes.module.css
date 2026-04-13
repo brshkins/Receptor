@@ -1,104 +1,203 @@
+/* Сетка рецептов */
+.recipeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+/* Карточка рецепта */
+.recipeCard {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--orange-light);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.recipeCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-8px);
+  border-color: var(--orange-primary);
+}
+
+.recipeImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: var(--gradient-soft);
+}
+
+.recipeContent {
+  padding: 20px;
+}
+
+.recipeTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4A3525;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.recipeMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  color: #8B6F5E;
+  font-size: 0.9rem;
+}
+
+/* Кнопка избранного */
 .favoriteButton {
-  background: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
   border: none;
-  font-size: 1.5rem;
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s;
-  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: #ccc;
+  font-size: 20px;
 }
 
 .favoriteButton:hover {
   transform: scale(1.1);
 }
 
-.favoriteActive {
-  color: #ef4444;
+.favoriteButton.active {
+  color: var(--orange-primary);
+  animation: heartBeat 0.3s ease;
 }
 
-.recipeCard {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Селектор ингредиентов */
+.ingredientsSection {
+  margin: 24px 0;
+  padding: 20px;
   background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-.recipeCard:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.recipeImage {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.recipeTitle {
-  font-size: 1.25rem;
+.ingredientsTitle {
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 8px;
-  color: #1f2937;
+  margin-bottom: 16px;
+  color: var(--orange-deep);
 }
 
-.recipeMeta {
-  display: flex;
-  gap: 16px;
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 8px;
+.ingredientsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
-.ingredientList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.ingredientItem {
+.ingredientCheckbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-}
-
-.filterContainer {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.searchInput {
-  flex: 1;
-  min-width: 200px;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.sortButton {
-  padding: 8px 16px;
+  gap: 10px;
+  padding: 10px 16px;
   background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
-.sortButton:hover {
-  background: #f3f4f6;
+.ingredientCheckbox:hover {
+  border-color: var(--orange-primary);
+  background: var(--yellow-soft);
 }
 
-.sortButton.active {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
+.ingredientCheckbox.selected {
+  background: var(--gradient-soft);
+  border-color: var(--orange-primary);
+}
+
+/* Фильтры */
+.filtersContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sortSelect {
+  padding: 10px 20px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: #4A3525;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--orange-light);
+  color: #8B6F5E;
+  font-size: 1.2rem;
+}
+
+.filtersContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sortSelect {
+  padding: 10px 20px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: #4A3525;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.sortSelect:hover {
+  border-color: var(--orange-primary);
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.1);
 }

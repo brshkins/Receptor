@@ -1,0 +1,132 @@
+/* Кнопки */
+.primaryButton {
+  background: var(--gradient-warm);
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: 14px 32px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.primaryButton:active {
+  transform: translateY(0);
+}
+
+.secondaryButton {
+  background: white;
+  border: 2px solid var(--orange-primary);
+  border-radius: var(--radius-xl);
+  padding: 12px 28px;
+  font-weight: 600;
+  color: var(--orange-deep);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--yellow-soft);
+  border-color: var(--orange-deep);
+}
+
+/* Поля ввода */
+.input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 4px rgba(245, 124, 0, 0.1);
+}
+
+/* Карточки */
+.card {
+  background: var(--gradient-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255, 224, 178, 0.5);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  border-color: var(--orange-light);
+}
+
+/* Лоадер */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--orange-light);
+  border-top-color: var(--orange-deep);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinnerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.spinnerText {
+  margin-top: 16px;
+  color: var(--orange-deep);
+  font-weight: 500;
+}
+
+/* SearchBar */
+.searchBar {
+  display: flex;
+  gap: 12px;
+  background: white;
+  padding: 8px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  padding: 12px 20px;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchButton {
+  background: var(--gradient-warm);
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
