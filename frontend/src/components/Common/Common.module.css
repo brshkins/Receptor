@@ -1,3 +1,10 @@
+/* Контейнер */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 /* Кнопки */
 .primaryButton {
   background: var(--gradient-warm);
@@ -57,18 +64,18 @@
 
 /* Карточки */
 .card {
-  background: var(--gradient-card);
+  background: white;
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(255, 224, 178, 0.5);
+  border: 1px solid var(--orange-light);
   transition: all 0.3s ease;
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-4px);
-  border-color: var(--orange-light);
+  border-color: var(--orange-primary);
 }
 
 /* Лоадер */
@@ -100,6 +107,8 @@
 }
 
 /* SearchBar */
+/* src/components/Common/Common.module.css */
+
 .searchBar {
   display: flex;
   gap: 12px;
@@ -107,14 +116,20 @@
   padding: 8px;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
+  align-items: center;
 }
 
 .searchInput {
   flex: 1;
   border: none;
-  padding: 12px 20px;
+  padding: 14px 20px;
   font-size: 1rem;
   background: transparent;
+  color: #4A3525;
+}
+
+.searchInput::placeholder {
+  color: #A38B7A;
 }
 
 .searchInput:focus {
@@ -129,4 +144,76 @@
   color: white;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  min-width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(to right, #FFA000 0%, #F57C00 100%);
+}
+
+.searchButton:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Кнопка фильтра */
+.filterButton {
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-xl);
+  padding: 12px 24px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+  min-width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.filterButton:hover {
+  background: var(--yellow-soft);
+  border-color: var(--orange-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.filterButton:active {
+  transform: translateY(0);
+}
+
+/* Активное состояние кнопки фильтра */
+.filterButton.filterActive {
+  background: var(--gradient-soft);
+  border-color: var(--orange-primary);
+  color: var(--orange-deep);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Индикатор активных фильтров */
+.filterButton.filterActive::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--orange-primary);
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: var(--shadow-sm);
+  animation: pulse-glow 2s infinite;
 }

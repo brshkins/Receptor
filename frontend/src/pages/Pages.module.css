@@ -248,3 +248,180 @@
 .emptyText {
   color: #A38B7A;
 }
+/* src/components/Recipes/Recipes.module.css */
+
+/* Добавляем в конец файла */
+
+.filterOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+  animation: fadeIn 0.2s ease;
+}
+
+.filterPanel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  z-index: 999;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid var(--orange-light);
+}
+
+.filterHeader h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--orange-deep);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #8B6F5E;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.closeButton:hover {
+  background: var(--yellow-soft);
+  color: var(--orange-deep);
+}
+
+.filterContent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-weight: 600;
+  color: #4A3525;
+  font-size: 0.95rem;
+}
+
+.filterSelect {
+  padding: 12px 16px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: #4A3525;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.filterSelect:hover {
+  border-color: var(--orange-primary);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.1);
+}
+
+.filterFooter {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 2px solid var(--orange-light);
+}
+
+.resetButton {
+  flex: 1;
+  padding: 12px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  color: #8B6F5E;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.resetButton:hover {
+  background: var(--yellow-soft);
+  border-color: var(--orange-primary);
+}
+
+.applyButton {
+  flex: 1;
+  padding: 12px;
+  background: var(--gradient-warm);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.applyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+/* src/pages/Pages.module.css */
+
+.searchSection {
+  margin-bottom: 32px;
+}
+
+.resultsCount {
+  margin-bottom: 20px;
+  color: #8B6F5E;
+  font-size: 1rem;
+  font-weight: 500;
+}
