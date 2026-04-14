@@ -265,13 +265,6 @@ const AuthPage: React.FC = () => {
             {isLogin ? 'Зарегистрироваться' : 'Войти'}
           </button>
         </div>
-        
-        {/* Демо-подсказка (для тестирования) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className={styles.demoHint}>
-            <span>🧪 Демо: test@example.com / 123456</span>
-          </div>
-        )}
       </div>
     </div>
   );

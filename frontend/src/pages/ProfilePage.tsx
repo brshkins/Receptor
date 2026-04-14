@@ -1,3 +1,4 @@
+// src/pages/ProfilePage.tsx
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Pages.module.css';
@@ -8,7 +9,10 @@ const ProfilePage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>👤 Профиль</h1>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.pageTitleEmoji}>👤</span>
+          <span className={styles.pageTitleText}>Профиль</span>
+        </h1>
         <p className={styles.pageDescription}>
           Ваши данные и настройки
         </p>

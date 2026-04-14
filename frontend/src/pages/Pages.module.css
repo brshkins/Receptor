@@ -5,6 +5,9 @@
   padding: 0 24px;
 }
 
+/* src/pages/Pages.module.css */
+
+/* Общие стили для заголовков страниц */
 .pageHeader {
   margin-bottom: 32px;
 }
@@ -15,20 +18,24 @@
   margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-/* Отдельный стиль для текстовой части заголовка */
+
+/* Эмодзи в заголовке - сохраняет естественный цвет */
+.pageTitleEmoji {
+  font-size: 2.8rem;
+  line-height: 1;
+  /* Никаких фильтров или градиентов */
+}
+
+/* Текст в заголовке - с градиентом */
 .pageTitleText {
   background: var(--gradient-warm);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-/* Эмодзи остаётся как есть */
-.pageTitleEmoji {
-  font-size: 2.8rem;
-  /* Никаких фильтров и градиентов */
+  font-weight: 800;
 }
 
 .pageDescription {
@@ -37,6 +44,9 @@
 }
 
 /* Главная страница */
+/* src/pages/Pages.module.css */
+
+/* Hero секция на главной */
 .hero {
   text-align: center;
   padding: 60px 20px;
@@ -50,7 +60,24 @@
   font-size: 3rem;
   font-weight: 800;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heroTitleEmoji {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  /* Сохраняет естественный цвет */
+}
+
+.heroTitleText {
+  color: white;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  /* Белый текст на градиентном фоне */
 }
 
 .heroSubtitle {
@@ -63,6 +90,7 @@
   display: flex;
   gap: 16px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .heroButton {
@@ -1380,19 +1408,6 @@
   cursor: not-allowed;
 }
 
-/* Демо-подсказка */
-.demoHint {
-  margin-top: 20px;
-  padding: 12px;
-  background: var(--yellow-soft);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  color: var(--orange-deep);
-  font-size: 0.85rem;
-  font-weight: 500;
-  border: 1px dashed var(--orange-light);
-}
-
 /* Спиннер */
 .spinnerSmall {
   width: 20px;
@@ -1448,5 +1463,52 @@
   .authSwitch {
     flex-direction: column;
     gap: 4px;
+  }
+}
+/* src/pages/Pages.module.css */
+
+/* Адаптивность для заголовков */
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 2rem;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .pageTitleEmoji {
+    font-size: 2.2rem;
+  }
+  
+  .heroTitle {
+    font-size: 2.2rem;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .heroTitleEmoji {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.6rem;
+    gap: 8px;
+  }
+  
+  .pageTitleEmoji {
+    font-size: 1.8rem;
+  }
+  
+  .heroTitle {
+    font-size: 1.8rem;
+  }
+  
+  .heroTitleEmoji {
+    font-size: 2rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1rem;
   }
 }

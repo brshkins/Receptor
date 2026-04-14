@@ -1,3 +1,4 @@
+// src/pages/HomePage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Pages.module.css';
@@ -6,7 +7,10 @@ const HomePage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.hero}>
-        <h1 className={styles.heroTitle}>🍳 Добро пожаловать в Receptor AI</h1>
+        <h1 className={styles.heroTitle}>
+          <span className={styles.heroTitleEmoji}>🍳</span>
+          <span className={styles.heroTitleText}>Добро пожаловать в Receptor AI</span>
+        </h1>
         <p className={styles.heroSubtitle}>
           Придумаем рецепт из того, что есть в холодильнике
         </p>
@@ -30,7 +34,7 @@ const HomePage: React.FC = () => {
         </div>
         <div className={styles.featureCard}>
           <div className={styles.featureIcon}>📚</div>
-          <h3 className={styles.featureTitle}>Тысячи рецептов</h3>
+          <h3 className={styles.featureTitle}>Сотни рецептов</h3>
           <p className={styles.featureDescription}>
             Огромная база проверенных рецептов с подробными инструкциями
           </p>

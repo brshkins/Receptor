@@ -112,13 +112,16 @@ const RecipesPage: React.FC = () => {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>📖 Все рецепты</h1>
-        <p className={styles.pageDescription}>
-          Найди идеальный рецепт из нашей коллекции
-        </p>
-      </div>
+  <div className={styles.pageContainer}>
+    <div className={styles.pageHeader}>
+      <h1 className={styles.pageTitle}>
+        <span className={styles.pageTitleEmoji}>📖</span>
+        <span className={styles.pageTitleText}>Все рецепты</span>
+      </h1>
+      <p className={styles.pageDescription}>
+        Найди идеальный рецепт из нашей коллекции
+      </p>
+    </div>
       
       <div className={styles.searchSection}>
         <SearchBar 

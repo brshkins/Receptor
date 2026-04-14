@@ -1,3 +1,4 @@
+// src/pages/FavoritesPage.tsx
 import React from 'react';
 import styles from './Pages.module.css';
 
@@ -5,7 +6,10 @@ const FavoritesPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>❤️ Избранное</h1>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.pageTitleEmoji}>❤️</span>
+          <span className={styles.pageTitleText}>Избранное</span>
+        </h1>
         <p className={styles.pageDescription}>
           Ваши любимые рецепты
         </p>
