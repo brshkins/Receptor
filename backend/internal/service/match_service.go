@@ -39,6 +39,9 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 	for _, ing := range found {
 		userIngredientIDs[ing.ID] = struct{}{}
 	}
+	if len(userIngredientIDs) == 0 {
+		return []dto.MatchResponse{}, nil
+	}
 
 	rows, err := s.db.Query(ctx, `
 		SELECT r.id, r.title, r.image_url, ri.ingredient_id, i.name
@@ -96,6 +99,10 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 		}
 		sort.Strings(missing)
 
+		if matched == 0 {
+			continue
+		}
+
 		pct := float64(matched) / float64(total)
 		out = append(out, dto.MatchResponse{
 			RecipeID:           recipeID,
@@ -112,6 +119,10 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 		}
 		return out[i].RecipeID < out[j].RecipeID
 	})
+
+	if len(out) > 20 {
+		out = out[:20]
+	}
 
 	return out, nil
 }
