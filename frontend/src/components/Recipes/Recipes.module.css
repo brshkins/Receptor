@@ -1,0 +1,590 @@
+/* Сетка рецептов */
+.recipeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+/* Карточка рецепта */
+.recipeCard {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--orange-light);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.recipeCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-8px);
+  border-color: var(--orange-primary);
+}
+
+.recipeImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: var(--gradient-soft);
+}
+
+.recipeContent {
+  padding: 20px;
+}
+
+.recipeTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4A3525;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.recipeMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  color: #8B6F5E;
+  font-size: 0.9rem;
+}
+
+/* Кнопка избранного */
+.favoriteButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: #ccc;
+  font-size: 20px;
+}
+
+.favoriteButton:hover {
+  transform: scale(1.1);
+}
+
+.favoriteButton.active {
+  color: var(--orange-primary);
+  animation: heartBeat 0.3s ease;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Селектор ингредиентов */
+.ingredientsSection {
+  margin: 24px 0;
+  padding: 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ingredientsTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--orange-deep);
+}
+
+.ingredientsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.ingredientCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ingredientCheckbox:hover {
+  border-color: var(--orange-primary);
+  background: var(--yellow-soft);
+}
+
+.ingredientCheckbox.selected {
+  background: var(--gradient-soft);
+  border-color: var(--orange-primary);
+}
+
+/* Фильтры */
+.filtersContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sortSelect {
+  padding: 10px 20px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: #4A3525;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--orange-light);
+  color: #8B6F5E;
+  font-size: 1.2rem;
+}
+
+.filtersContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sortSelect {
+  padding: 10px 20px;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: #4A3525;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.sortSelect:hover {
+  border-color: var(--orange-primary);
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.1);
+}
+/* src/components/Recipes/Recipes.module.css */
+
+/* src/components/Recipes/Recipes.module.css */
+
+/* Оверлей */
+.filterOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Панель фильтров */
+.filterPanel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 40px rgba(245, 124, 0, 0.15), 0 0 0 1px var(--orange-light);
+  z-index: 999;
+  width: 90%;
+  max-width: 480px;
+  overflow: hidden;
+  animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Заголовок */
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--gradient-soft);
+  border-bottom: 2px solid var(--orange-primary);
+}
+
+.filterHeader h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterIcon {
+  font-size: 1.4rem;
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--orange-deep);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.closeButton:hover {
+  background: var(--orange-primary);
+  border-color: var(--orange-primary);
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.closeButton span {
+  display: block;
+  line-height: 1;
+}
+
+/* Контент */
+.filterContent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #FFF9F0;
+}
+
+/* Овальная плашка-контейнер */
+.filterChipContainer {
+  background: white;
+  border-radius: 100px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--orange-light);
+  transition: all 0.3s ease;
+}
+
+.filterChipContainer:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--orange-primary);
+}
+
+/* Заголовок внутри плашки */
+.filterChipLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.labelIcon {
+  font-size: 1rem;
+}
+
+/* Группа чипсов */
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Маленькие чипсы */
+.chip {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 16px;
+  background: var(--yellow-soft);
+  border: 2px solid var(--orange-light);
+  border-radius: 100px;
+  color: #4A3525;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.chipSmall {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--orange-primary);
+  background: white;
+}
+
+.chipActive {
+  background: var(--gradient-warm);
+  border-color: var(--orange-deep);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.chipActive:hover {
+  background: linear-gradient(to right, #FFA000 0%, #F57C00 100%);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.chipIcon {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.chip:hover .chipIcon {
+  transform: scale(1.15);
+}
+
+.chipActive .chipIcon {
+  filter: brightness(0) invert(1);
+}
+
+.chipText {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Селект */
+.filterSelect {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--orange-light);
+  border-radius: 100px;
+  background: var(--yellow-soft);
+  color: #4A3525;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F57C00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 14px;
+}
+
+.filterSelect:hover {
+  border-color: var(--orange-primary);
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.15);
+}
+
+/* Футер с кнопками */
+.filterFooter {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  background: white;
+  border-top: 2px solid var(--orange-light);
+}
+
+.resetButton,
+.applyButton {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+}
+
+.resetButton {
+  background: white;
+  border: 2px solid var(--orange-light);
+  color: var(--orange-deep);
+  box-shadow: var(--shadow-sm);
+}
+
+.resetButton:hover {
+  background: var(--yellow-soft);
+  border-color: var(--orange-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.resetButton:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.applyButton {
+  background: var(--gradient-warm);
+  color: white;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.applyButton::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.applyButton:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.applyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(to right, #FFA000 0%, #F57C00 100%);
+}
+
+.applyButton:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+.buttonIcon {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+
+.resetButton:hover .buttonIcon {
+  transform: rotate(-180deg);
+}
+
+.applyButton:hover .buttonIcon {
+  transform: scale(1.2);
+}
+
+/* Скроллбар */
+.filterContent::-webkit-scrollbar {
+  width: 5px;
+}
+
+.filterContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filterContent::-webkit-scrollbar-thumb {
+  background: var(--orange-light);
+  border-radius: 100px;
+}
+
+.filterContent::-webkit-scrollbar-thumb:hover {
+  background: var(--orange-primary);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(4px); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .filterPanel {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .filterContent {
+    padding: 20px;
+  }
+  
+  .filterChipContainer {
+    padding: 14px 16px;
+  }
+  
+  .chip {
+    padding: 8px 12px;
+  }
+  
+  .chipText {
+    font-size: 0.75rem;
+  }
+  
+  .filterFooter {
+    padding: 16px 20px;
+  }
+}

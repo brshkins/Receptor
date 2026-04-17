@@ -8,10 +8,75 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ingredientClassMap = map[string]string{
+	"apple":          "apple",
+	"apples":         "apple",
+	"banana":         "banana",
+	"bananas":        "banana",
+	"orange":         "orange",
+	"oranges":        "orange",
+	"tomato":         "tomato",
+	"tomatoes":       "tomato",
+	"cucumber":       "cucumber",
+	"cucumbers":      "cucumber",
+	"potato":         "potato",
+	"potatoes":       "potato",
+	"onion":          "onion",
+	"onions":         "onion",
+	"carrot":         "carrot",
+	"carrots":        "carrot",
+	"cabbage":        "cabbage",
+	"cabbages":       "cabbage",
+	"mushroom":       "mushroom",
+	"mushrooms":      "mushroom",
+	"garlic":         "garlic",
+	"pepper":         "pepper",
+	"peppers":        "pepper",
+	"milk":           "milk",
+	"cheese":         "cheese",
+	"yogurt":         "yogurt",
+	"butter":         "butter",
+	"egg":            "eggs",
+	"eggs":           "eggs",
+	"bread":          "bread",
+	"beef":           "meat",
+	"pork":           "meat",
+	"chicken":        "meat",
+	"turkey":         "meat",
+	"meat":           "meat",
+	"fish":           "fish",
+	"salmon":         "fish",
+	"tuna":           "fish",
+	"juice":          "juice",
+	"water":          "water",
+	"instant noodle": "instant_noodle",
+	"instant noodles": "instant_noodle",
+	"instant_noodle": "instant_noodle",
+	"ramen":          "instant_noodle",
+	"noodles":        "instant_noodle",
+}
+
+func normalizeIngredientName(raw string) string {
+	norm := strings.ToLower(strings.TrimSpace(raw))
+	if mapped, ok := ingredientClassMap[norm]; ok {
+		return mapped
+	}
+	return raw
+}
+
+func ingredientDedupKey(raw string) string {
+	norm := strings.ToLower(strings.TrimSpace(raw))
+	if mapped, ok := ingredientClassMap[norm]; ok {
+		return mapped
+	}
+	return norm
+}
 
 type seedRecipe struct {
 	Title       string `json:"title"`
@@ -59,15 +124,12 @@ func main() {
 func readRecipesJSON(filename string) ([]seedRecipe, error) {
 	paths := make([]string, 0, 3)
 
-	// Prefer the directory of this source file (works with `go run`).
 	if _, thisFile, _, ok := runtime.Caller(0); ok {
 		paths = append(paths, filepath.Join(filepath.Dir(thisFile), filename))
 	}
-	// Fallback to current working directory (works with `go run` from backend/).
 	if wd, err := os.Getwd(); err == nil {
 		paths = append(paths, filepath.Join(wd, filename))
 	}
-	// As a last resort, try next to the executable (works with `go build`).
 	if exe, err := os.Executable(); err == nil {
 		paths = append(paths, filepath.Join(filepath.Dir(exe), filename))
 	}
@@ -113,18 +175,26 @@ func seedOneRecipe(ctx context.Context, pool *pgxpool.Pool, r *seedRecipe) error
 		return err
 	}
 
+	seenIngredients := make(map[string]struct{}, len(r.Ingredients))
 	for _, ing := range r.Ingredients {
+		key := ingredientDedupKey(ing.Name)
+		if _, seen := seenIngredients[key]; seen {
+			continue
+		}
+		seenIngredients[key] = struct{}{}
+
+		name := normalizeIngredientName(ing.Name)
 		if _, err := tx.Exec(
 			ctx,
 			`INSERT INTO ingredients (name) VALUES ($1)
 			 ON CONFLICT (name) DO NOTHING`,
-			ing.Name,
+			name,
 		); err != nil {
 			return err
 		}
 
 		var ingredientID int
-		if err := tx.QueryRow(ctx, `SELECT id FROM ingredients WHERE name=$1`, ing.Name).Scan(&ingredientID); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT id FROM ingredients WHERE name=$1`, name).Scan(&ingredientID); err != nil {
 			return err
 		}
 

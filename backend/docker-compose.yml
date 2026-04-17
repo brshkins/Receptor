@@ -6,13 +6,13 @@ services:
     container_name: receptor_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 04MrOg.26
-      POSTGRES_DB: receptor
+      POSTGRES_USER: receptor_user
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: receptor_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  pgdata:
