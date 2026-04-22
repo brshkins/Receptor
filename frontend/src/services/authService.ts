@@ -2,10 +2,9 @@
 import { apiClient } from './api';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  avatar?: string;
 }
 
 export interface LoginCredentials {
@@ -21,7 +20,6 @@ export interface RegisterData {
 
 export interface AuthResponse {
   token: string;
-  user: User;
 }
 
 export const authService = {

@@ -8,6 +8,7 @@ import styles from './App.module.css';
 // Обычные импорты вместо lazy
 import HomePage from './pages/HomePage';
 import RecipesPage from './pages/RecipesPage';
+import RecipeDetailsPage from './pages/RecipeDetailsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MatchPage from './pages/MatchPage';
 import ProfilePage from './pages/ProfilePage';
@@ -23,6 +24,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/recipes" element={<RecipesPage />} />
+              <Route path="/recipes/:id" element={<RecipeDetailsPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/match" element={<MatchPage />} />
               <Route path="/profile" element={<ProfilePage />} />

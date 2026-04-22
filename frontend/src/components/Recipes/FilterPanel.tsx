@@ -25,22 +25,22 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     }
   }, [isOpen, filters]);
 
-  const handleDifficultyChange = (difficulty: FilterType['difficulty']) => {
-    setLocalFilters(prev => ({
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim();
+    setLocalFilters((prev) => ({ ...prev, category: value || undefined }));
+  };
+
+  const handleMaxTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const value = raw === '' ? undefined : Number(raw);
+    setLocalFilters((prev) => ({
       ...prev,
-      difficulty: prev.difficulty === difficulty ? undefined : difficulty
+      max_time: typeof value === 'number' && !Number.isNaN(value) ? value : undefined,
     }));
   };
 
-  const handleSortChange = (sort: FilterType['sort']) => {
-    setLocalFilters(prev => ({ ...prev, sort }));
-  };
-
-  const handleSortByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLocalFilters(prev => ({ 
-      ...prev, 
-      sortBy: e.target.value as FilterType['sortBy']
-    }));
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLocalFilters((prev) => ({ ...prev, sort: e.target.value as FilterType['sort'] }));
   };
 
   const handleApply = () => {
@@ -50,8 +50,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const handleReset = () => {
     const defaultFilters: FilterType = {
-      sort: 'asc',
-      sortBy: 'name'
+      sort: 'alphabet_asc'
     };
     setLocalFilters(defaultFilters);
   };
@@ -79,79 +78,48 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
         
         <div className={styles.filterContent}>
-          {/* Плашка с фильтрами сложности */}
+          {/* Category */}
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
-              <span className={styles.labelIcon}>📊</span>
-              <span>Сложность</span>
+              <span className={styles.labelIcon}>🏷️</span>
+              <span>Категория</span>
             </div>
-            <div className={styles.chipGroup}>
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'easy' ? styles.chipActive : ''}`}
-                onClick={() => handleDifficultyChange('easy')}
-              >
-                <span className={styles.chipIcon}>🥚</span>
-                <span className={styles.chipText}>Легко</span>
-              </button>
-              
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'medium' ? styles.chipActive : ''}`}
-                onClick={() => handleDifficultyChange('medium')}
-              >
-                <span className={styles.chipIcon}>👨‍🍳</span>
-                <span className={styles.chipText}>Средне</span>
-              </button>
-              
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'hard' ? styles.chipActive : ''}`}
-                onClick={() => handleDifficultyChange('hard')}
-              >
-                <span className={styles.chipIcon}>🔥</span>
-                <span className={styles.chipText}>Сложно</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Плашка с сортировкой */}
-          <div className={styles.filterChipContainer}>
-            <div className={styles.filterChipLabel}>
-              <span className={styles.labelIcon}>📝</span>
-              <span>Сортировка</span>
-            </div>
-            <select 
+            <input
               className={styles.filterSelect}
-              value={localFilters.sortBy} 
-              onChange={handleSortByChange}
-            >
-              <option value="name">По названию</option>
-              <option value="time">По времени</option>
-              <option value="difficulty">По сложности</option>
-            </select>
+              value={localFilters.category || ''}
+              onChange={handleCategoryChange}
+              placeholder="Например: soup"
+            />
           </div>
 
-          {/* Плашка с порядком сортировки */}
+          {/* Max time */}
+          <div className={styles.filterChipContainer}>
+            <div className={styles.filterChipLabel}>
+              <span className={styles.labelIcon}>⏱️</span>
+              <span>Макс. время (мин)</span>
+            </div>
+            <input
+              className={styles.filterSelect}
+              type="number"
+              min={0}
+              value={typeof localFilters.max_time === 'number' ? String(localFilters.max_time) : ''}
+              onChange={handleMaxTimeChange}
+              placeholder="Например: 30"
+            />
+          </div>
+
+          {/* Sort */}
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
               <span className={styles.labelIcon}>🔄</span>
-              <span>Порядок</span>
+              <span>Сортировка</span>
             </div>
-            <div className={styles.chipGroup}>
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.sort === 'asc' ? styles.chipActive : ''}`}
-                onClick={() => handleSortChange('asc')}
-              >
-                <span className={styles.chipIcon}>🔼</span>
-                <span className={styles.chipText}>Возр.</span>
-              </button>
-              
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.sort === 'desc' ? styles.chipActive : ''}`}
-                onClick={() => handleSortChange('desc')}
-              >
-                <span className={styles.chipIcon}>🔽</span>
-                <span className={styles.chipText}>Убыв.</span>
-              </button>
-            </div>
+            <select className={styles.filterSelect} value={localFilters.sort || 'alphabet_asc'} onChange={handleSortChange}>
+              <option value="alphabet_asc">Название (А→Я)</option>
+              <option value="alphabet_desc">Название (Я→А)</option>
+              <option value="time_asc">Время (по возрастанию)</option>
+              <option value="time_desc">Время (по убыванию)</option>
+            </select>
           </div>
         </div>
         

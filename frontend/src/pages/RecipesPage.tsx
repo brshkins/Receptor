@@ -6,6 +6,7 @@ import { FilterPanel } from '../components/Recipes/FilterPanel';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { recipesService } from '../services/recipesService';
 import { Recipe, RecipeFilters as FilterType } from '../types';
+import { favoritesService } from '../services/favoritesService';
 import styles from './Pages.module.css';
 
 const RecipesPage: React.FC = () => {
@@ -14,51 +15,38 @@ const RecipesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterType>({
-    sort: 'asc',
-    sortBy: 'name'
+    sort: 'alphabet_asc'
   });
 
   const loadRecipes = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Используем правильный метод из сервиса
       const data = await recipesService.getAll({
         search: searchTerm || undefined,
+        category: filters.category,
+        max_time: filters.max_time,
         sort: filters.sort,
-        limit: 50 // Добавляем лимит для производительности
       });
-      
-      // Применяем фильтрацию на клиенте (если бэкенд не поддерживает)
-      let filteredRecipes = data;
-      
-      // Фильтрация по сложности (если бэкенд не фильтрует)
-      if (filters.difficulty) {
-        filteredRecipes = filteredRecipes.filter(
-          recipe => recipe.difficulty === filters.difficulty
-        );
+
+      // If authenticated, overlay favorite state from GET /favorites.
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const favs = await favoritesService.list();
+          const favSet =
+            Array.isArray(favs) && (favs.length === 0 || typeof favs[0] === 'number')
+              ? new Set<number>(favs as number[])
+              : new Set<number>((favs as Array<{ id: number }>).map((f) => f.id));
+          setRecipes(data.map((r) => ({ ...r, isFavorite: favSet.has(r.id) })));
+        } catch {
+          setRecipes(data);
+        }
+      } else {
+        setRecipes(data);
       }
-      
-      // Сортировка (если бэкенд не сортирует)
-      if (filters.sortBy === 'time') {
-        filteredRecipes.sort((a, b) => {
-          return filters.sort === 'asc' 
-            ? a.cookingTime - b.cookingTime 
-            : b.cookingTime - a.cookingTime;
-        });
-      } else if (filters.sortBy === 'difficulty') {
-        const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
-        filteredRecipes.sort((a, b) => {
-          const diffA = difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0;
-          const diffB = difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0;
-          return filters.sort === 'asc' ? diffA - diffB : diffB - diffA;
-        });
-      }
-      
-      setRecipes(filteredRecipes);
     } catch (error) {
       console.error('Failed to load recipes:', error);
-      // Показываем заглушку при ошибке
       setRecipes([]);
     } finally {
       setLoading(false);
@@ -77,35 +65,22 @@ const RecipesPage: React.FC = () => {
     setFilters(newFilters);
   };
 
-  const handleFavoriteToggle = async (id: string) => {
-    // Оптимистичное обновление UI
-    setRecipes(prevRecipes => 
-      prevRecipes.map(recipe => 
-        recipe.id === id 
-          ? { ...recipe, isFavorite: !recipe.isFavorite }
-          : recipe
-      )
-    );
-    
-    // TODO: Добавить API call для сохранения в избранное
+  const handleFavoriteToggle = async (id: number) => {
     try {
-      // await favoritesService.toggle(id);
-    } catch (error) {
-      // Откатываем при ошибке
-      setRecipes(prevRecipes => 
-        prevRecipes.map(recipe => 
-          recipe.id === id 
-            ? { ...recipe, isFavorite: !recipe.isFavorite }
-            : recipe
-        )
-      );
+      const currentlyFavorite = recipes.find((r) => r.id === id)?.isFavorite;
+      if (currentlyFavorite) {
+        await favoritesService.remove(id);
+      } else {
+        await favoritesService.add(id);
+      }
+      setRecipes((prev) => prev.map((r) => (r.id === id ? { ...r, isFavorite: !r.isFavorite } : r)));
+    } catch {
+      // no-op (UI stays as-is)
     }
   };
 
-  // Проверяем, активны ли фильтры
-  const isFilterActive = filters.difficulty !== undefined || 
-                         filters.sort !== 'asc' || 
-                         filters.sortBy !== 'name';
+  const isFilterActive =
+    !!filters.category || typeof filters.max_time === 'number' || (filters.sort ?? 'alphabet_asc') !== 'alphabet_asc';
 
   if (loading && recipes.length === 0) {
     return <LoadingSpinner text="Загружаем рецепты..." />;

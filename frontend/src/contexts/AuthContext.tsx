@@ -1,13 +1,11 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
-import apiClient from '../services/api';
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  avatar?: string;
 }
 
 interface AuthContextType {
@@ -46,13 +44,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string) => {
     const response = await authService.login({ email, password });
     localStorage.setItem('token', response.token);
-    setUser(response.user);
+    const userData = await authService.getMe();
+    setUser(userData);
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await authService.register({ name, email, password });
     localStorage.setItem('token', response.token);
-    setUser(response.user);
+    const userData = await authService.getMe();
+    setUser(userData);
   };
 
   const logout = () => {

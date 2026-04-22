@@ -5,7 +5,7 @@ import styles from './Recipes.module.css';
 
 interface RecipeListProps {
   recipes: Recipe[];
-  onFavoriteToggle?: (id: string) => void;
+  onFavoriteToggle?: (id: number) => void;
 }
 
 export const RecipeList: React.FC<RecipeListProps> = ({ 
@@ -27,10 +27,9 @@ export const RecipeList: React.FC<RecipeListProps> = ({
           key={recipe.id}
           id={recipe.id}
           title={recipe.title}
-          imageUrl={recipe.imageUrl}
-          cookingTime={recipe.cookingTime}
-          difficulty={recipe.difficulty}
-          isFavorite={recipe.isFavorite}
+          image={recipe.image}
+          cooking_time={recipe.cooking_time}
+          category={recipe.category}
           onFavoriteToggle={onFavoriteToggle}
         />
       ))}

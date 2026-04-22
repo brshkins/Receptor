@@ -4,29 +4,29 @@ import { FavoriteButton } from './FavoriteButton';
 import styles from './Recipes.module.css';
 
 interface RecipeCardProps {
-  id: string;
+  id: number;
   title: string;
-  imageUrl?: string;
-  cookingTime?: number;
-  difficulty?: string;
+  image?: string;
+  cooking_time?: number;
+  category?: string;
   isFavorite?: boolean;
-  onFavoriteToggle?: (id: string) => void;
+  onFavoriteToggle?: (id: number) => void;
 }
 
 export const RecipeCard: React.FC<RecipeCardProps> = ({
   id,
   title,
-  imageUrl,
-  cookingTime,
-  difficulty,
+  image,
+  cooking_time,
+  category,
   isFavorite = false,
   onFavoriteToggle
 }) => {
   return (
     <div className={styles.recipeCard}>
       <Link to={`/recipes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-        {imageUrl ? (
-          <img src={imageUrl} alt={title} className={styles.recipeImage} />
+        {image ? (
+          <img src={image} alt={title} className={styles.recipeImage} />
         ) : (
           <div className={styles.recipeImage} style={{ 
             display: 'flex', 
@@ -40,8 +40,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <div className={styles.recipeContent}>
           <h3 className={styles.recipeTitle}>{title}</h3>
           <div className={styles.recipeMeta}>
-            {cookingTime && <span>⏱️ {cookingTime} мин</span>}
-            {difficulty && <span>📊 {difficulty}</span>}
+            {typeof cooking_time === 'number' && <span>⏱️ {cooking_time} мин</span>}
+            {category && <span>🏷️ {category}</span>}
           </div>
         </div>
       </Link>
