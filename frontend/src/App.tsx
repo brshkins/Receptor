@@ -9,7 +9,7 @@ import styles from './App.module.css';
 import HomePage from './pages/HomePage';
 import RecipesPage from './pages/RecipesPage';
 import FavoritesPage from './pages/FavoritesPage';
-import MatchPage from './pages/MatchPage';
+import RecipeFinderPage from './pages/RecipeFinderPage';
 import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 
@@ -24,7 +24,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/recipes" element={<RecipesPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/match" element={<MatchPage />} />
+              <Route path="/match" element={<RecipeFinderPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/auth" element={<AuthPage />} />
             </Routes>

@@ -17,19 +17,16 @@ export interface Ingredient {
 
 // Recipe types
 export interface Recipe {
-  id: string;
+  id: number | string;
   title: string;
-  description: string;
-  ingredients: Ingredient[] | string[];
-  instructions: string[];
-  cookingTime: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  servings?: number;
+  description?: string;
+  image?: string;
   imageUrl?: string;
+  cooking_time?: number;
+  cookingTime?: number;
+  category?: string;
+  difficulty?: string;
   isFavorite?: boolean;
-  createdAt?: string;
-  authorId?: string;
-  author?: User;
 }
 
 // API types

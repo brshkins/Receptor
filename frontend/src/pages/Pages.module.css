@@ -1512,3 +1512,509 @@
     font-size: 1rem;
   }
 }
+/* Камера */
+.cameraPanel {
+  width: 100%;
+}
+
+.cameraPlaceholder {
+  text-align: center;
+  padding: 48px;
+  background: var(--yellow-soft);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--orange-light);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.cameraIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.cameraButton {
+  margin-top: 24px;
+  padding: 16px 32px;
+  background: var(--gradient-warm);
+  border: none;
+  border-radius: var(--radius-xl);
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cameraButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.cameraContainer {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.cameraVideo {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;  /* ← Важно! */
+  background: #000; /* Чёрный фон, пока видео не загрузилось */
+  border-radius: var(--radius-xl);
+}
+
+.cameraControls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.captureButton {
+  padding: 16px 32px;
+  background: white;
+  border: none;
+  border-radius: 100px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.captureButton:hover {
+  transform: scale(1.05);
+  background: var(--gradient-warm);
+  color: white;
+}
+
+.capturedContainer {
+  text-align: center;
+}
+
+.capturedImage {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: var(--radius-xl);
+  margin-bottom: 20px;
+}
+
+.capturedControls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.retakeButton, .analyzeButton {
+  padding: 14px 24px;
+  border-radius: var(--radius-xl);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retakeButton {
+  background: white;
+  border: 2px solid var(--orange-light);
+  color: var(--orange-deep);
+}
+
+.analyzeButton {
+  background: var(--gradient-warm);
+  border: none;
+  color: white;
+}
+
+.loadingContainer {
+  padding: 48px;
+  text-align: center;
+}
+
+.resultsPanel {
+  width: 100%;
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  padding: 10px 20px;
+  background: transparent;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-lg);
+  color: var(--orange-deep);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.backButton:hover {
+  background: var(--yellow-soft);
+}
+/* Предпросмотр камеры */
+.cameraPreview {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  background: #000;
+}
+
+.cameraVideo {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  aspect-ratio: 4/3;
+}
+
+.cameraOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+  display: flex;
+  justify-content: center;
+}
+
+.captureButton {
+  padding: 16px 32px;
+  background: white;
+  border: none;
+  border-radius: 100px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.captureButton:hover {
+  transform: scale(1.05);
+  background: var(--gradient-warm);
+  color: white;
+}
+
+/* Плейсхолдер */
+.cameraPlaceholder {
+  text-align: center;
+  padding: 48px;
+  background: var(--yellow-soft);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--orange-light);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.cameraIcon {
+  font-size: 72px;
+  margin-bottom: 20px;
+}
+
+.cameraButton {
+  margin-top: 24px;
+  padding: 16px 32px;
+  background: var(--gradient-warm);
+  border: none;
+  border-radius: var(--radius-xl);
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cameraButton:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+/* Опции выбора */
+.cameraOptions {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.optionCard {
+  flex: 1;
+  min-width: 200px;
+  padding: 32px 24px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.optionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--orange-primary);
+  background: var(--yellow-soft);
+}
+
+.optionIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.optionCard h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--orange-deep);
+  margin-bottom: 8px;
+}
+
+.optionCard p {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+}
+
+.optionDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionDivider span {
+  padding: 8px 16px;
+  background: var(--yellow-soft);
+  border-radius: 100px;
+  color: var(--orange-deep);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Кнопка назад в камере */
+.backToOptionsButton {
+  margin-left: 12px;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 100px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.backToOptionsButton:hover {
+  background: white;
+  transform: scale(1.05);
+}
+
+.cameraOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .cameraOptions {
+    flex-direction: column;
+  }
+  
+  .optionDivider {
+    padding: 10px 0;
+  }
+}
+/* Селектор режима */
+.modeSelector {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.modeButton {
+  padding: 10px 24px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: 100px;
+  color: #4A3525;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modeButton:hover {
+  border-color: var(--orange-primary);
+  background: var(--yellow-soft);
+}
+
+.modeButton.active {
+  background: var(--gradient-warm);
+  border-color: var(--orange-deep);
+  color: white;
+}
+
+.multiModeHint {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 100px;
+  color: white;
+  font-size: 0.85rem;
+}
+
+/* Галерея */
+.galleryContainer {
+  margin-top: 24px;
+}
+
+.galleryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.galleryHeader h4 {
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.galleryActions {
+  display: flex;
+  gap: 8px;
+}
+
+.addMoreButton {
+  padding: 8px 16px;
+  background: var(--yellow-soft);
+  border: 2px solid var(--orange-light);
+  border-radius: 100px;
+  color: var(--orange-deep);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.addMoreButton:hover {
+  background: white;
+  border-color: var(--orange-primary);
+}
+
+.clearAllButton {
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #ffcdd2;
+  border-radius: 100px;
+  color: #c62828;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clearAllButton:hover {
+  background: #ffebee;
+  border-color: #ef5350;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.galleryItem {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px solid var(--orange-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.galleryItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.removeImageButton:hover {
+  background: #f44336;
+  transform: scale(1.1);
+}
+
+.imageNumber {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

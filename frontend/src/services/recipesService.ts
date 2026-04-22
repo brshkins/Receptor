@@ -31,16 +31,13 @@ export interface RecipeFilters {
 }
 
 export const recipesService = {
+  // Временно убираем sort и limit — бэкенд их не поддерживает
   async getAll(params?: {
     search?: string;
-    sort?: 'asc' | 'desc';
-    limit?: number;
   }): Promise<Recipe[]> {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.append('search', params.search);
-    if (params?.sort) queryParams.append('sort', params.sort);
-    if (params?.limit) queryParams.append('limit', String(params.limit));
-
+    
     const query = queryParams.toString();
     return apiClient.get<Recipe[]>(`/recipes${query ? `?${query}` : ''}`);
   },
@@ -57,9 +54,10 @@ export const recipesService = {
       queryParams.append('ingredients', filters.ingredients.join(','));
     }
     if (filters?.difficulty) queryParams.append('difficulty', filters.difficulty);
-    if (filters?.sort) queryParams.append('sort', filters.sort);
-    if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy);
-    if (filters?.limit) queryParams.append('limit', String(filters.limit));
+    // Убираем sort и limit — они не поддерживаются бэкендом
+    // if (filters?.sort) queryParams.append('sort', filters.sort);
+    // if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy);
+    // if (filters?.limit) queryParams.append('limit', String(filters.limit));
     if (filters?.page) queryParams.append('page', String(filters.page));
 
     const query = queryParams.toString();

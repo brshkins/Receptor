@@ -588,3 +588,27 @@
     padding: 16px 20px;
   }
 }
+.recipeDescription {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 12px 0;
+  min-height: 44px;
+}
+
+.recipeMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  color: #8B6F5E;
+  font-size: 0.9rem;
+  border-top: 1px solid var(--orange-light);
+  padding-top: 12px;
+}
+
+.recipeMeta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

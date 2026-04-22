@@ -5,6 +5,7 @@ import { SearchBar } from '../components/Common/SearchBar';
 import { FilterPanel } from '../components/Recipes/FilterPanel';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { recipesService } from '../services/recipesService';
+import { favoritesService } from '../services/favoritesService';
 import { Recipe, RecipeFilters as FilterType } from '../types';
 import styles from './Pages.module.css';
 
@@ -22,43 +23,75 @@ const RecipesPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Используем правильный метод из сервиса
-      const data = await recipesService.getAll({
+      const response = await recipesService.getAll({
         search: searchTerm || undefined,
-        sort: filters.sort,
-        limit: 50 // Добавляем лимит для производительности
       });
       
-      // Применяем фильтрацию на клиенте (если бэкенд не поддерживает)
-      let filteredRecipes = data;
+      console.log('Ответ бэкенда:', response);
       
-      // Фильтрация по сложности (если бэкенд не фильтрует)
-      if (filters.difficulty) {
-        filteredRecipes = filteredRecipes.filter(
-          recipe => recipe.difficulty === filters.difficulty
-        );
+      let recipesList: Recipe[] = [];
+      
+      if (Array.isArray(response)) {
+        recipesList = response;
+      } else if (response && typeof response === 'object') {
+        if ('data' in response && Array.isArray((response as any).data)) {
+          recipesList = (response as any).data;
+        } else if ('recipes' in response && Array.isArray((response as any).recipes)) {
+          recipesList = (response as any).recipes;
+        } else {
+          const values = Object.values(response);
+          recipesList = values.filter((item): item is Recipe => {
+            return item !== null && 
+                   typeof item === 'object' && 
+                   'id' in item && 
+                   'title' in item;
+          });
+        }
       }
       
-      // Сортировка (если бэкенд не сортирует)
+      console.log('Массив рецептов:', recipesList);
+      
+      let filteredRecipes: Recipe[] = [...recipesList];
+      
+      // Фильтрация по сложности
+      if (filters.difficulty) {
+        filteredRecipes = filteredRecipes.filter(recipe => {
+          const recipeDiff = recipe.difficulty || recipe.category || '';
+          return recipeDiff === filters.difficulty;
+        });
+      }
+      
+      // Сортировка
       if (filters.sortBy === 'time') {
         filteredRecipes.sort((a, b) => {
-          return filters.sort === 'asc' 
-            ? a.cookingTime - b.cookingTime 
-            : b.cookingTime - a.cookingTime;
+          const timeA = a.cookingTime ?? a.cooking_time ?? 0;
+          const timeB = b.cookingTime ?? b.cooking_time ?? 0;
+          return filters.sort === 'asc' ? timeA - timeB : timeB - timeA;
         });
       } else if (filters.sortBy === 'difficulty') {
-        const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
+        const difficultyOrder: Record<string, number> = { 
+          easy: 1, medium: 2, hard: 3 
+        };
         filteredRecipes.sort((a, b) => {
-          const diffA = difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0;
-          const diffB = difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0;
-          return filters.sort === 'asc' ? diffA - diffB : diffB - diffA;
+          const diffA = a.difficulty || a.category || '';
+          const diffB = b.difficulty || b.category || '';
+          const valueA = difficultyOrder[diffA] ?? 0;
+          const valueB = difficultyOrder[diffB] ?? 0;
+          return filters.sort === 'asc' ? valueA - valueB : valueB - valueA;
+        });
+      } else if (filters.sortBy === 'name') {
+        filteredRecipes.sort((a, b) => {
+          const titleA = a.title || '';
+          const titleB = b.title || '';
+          return filters.sort === 'asc' 
+            ? titleA.localeCompare(titleB)
+            : titleB.localeCompare(titleA);
         });
       }
       
       setRecipes(filteredRecipes);
     } catch (error) {
       console.error('Failed to load recipes:', error);
-      // Показываем заглушку при ошибке
       setRecipes([]);
     } finally {
       setLoading(false);
@@ -78,25 +111,33 @@ const RecipesPage: React.FC = () => {
   };
 
   const handleFavoriteToggle = async (id: string) => {
+    const recipe = recipes.find(r => String(r.id) === id);
+    if (!recipe) return;
+    
     // Оптимистичное обновление UI
     setRecipes(prevRecipes => 
-      prevRecipes.map(recipe => 
-        recipe.id === id 
-          ? { ...recipe, isFavorite: !recipe.isFavorite }
-          : recipe
+      prevRecipes.map(r => 
+        String(r.id) === id 
+          ? { ...r, isFavorite: !r.isFavorite }
+          : r
       )
     );
     
-    // TODO: Добавить API call для сохранения в избранное
+    // Отправка на бэкенд
     try {
-      // await favoritesService.toggle(id);
+      if (recipe.isFavorite) {
+        await favoritesService.remove(id);
+      } else {
+        await favoritesService.add(id);
+      }
     } catch (error) {
+      console.error('Ошибка избранного:', error);
       // Откатываем при ошибке
       setRecipes(prevRecipes => 
-        prevRecipes.map(recipe => 
-          recipe.id === id 
-            ? { ...recipe, isFavorite: !recipe.isFavorite }
-            : recipe
+        prevRecipes.map(r => 
+          String(r.id) === id 
+            ? { ...r, isFavorite: !r.isFavorite }
+            : r
         )
       );
     }
@@ -112,16 +153,16 @@ const RecipesPage: React.FC = () => {
   }
 
   return (
-  <div className={styles.pageContainer}>
-    <div className={styles.pageHeader}>
-      <h1 className={styles.pageTitle}>
-        <span className={styles.pageTitleEmoji}>📖</span>
-        <span className={styles.pageTitleText}>Все рецепты</span>
-      </h1>
-      <p className={styles.pageDescription}>
-        Найди идеальный рецепт из нашей коллекции
-      </p>
-    </div>
+    <div className={styles.pageContainer}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.pageTitleEmoji}>📖</span>
+          <span className={styles.pageTitleText}>Все рецепты</span>
+        </h1>
+        <p className={styles.pageDescription}>
+          Найди идеальный рецепт из нашей коллекции
+        </p>
+      </div>
       
       <div className={styles.searchSection}>
         <SearchBar 
