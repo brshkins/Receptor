@@ -76,8 +76,9 @@ export interface RecipeFilters {
   search?: string;
   ingredients?: string[];
   difficulty?: 'easy' | 'medium' | 'hard';
+  category?: string;  // ← ДОБАВЬ ЭТУ СТРОКУ
   sort?: 'asc' | 'desc';
-  sortBy?: 'name' | 'time' | 'difficulty';
+  sortBy?: 'name' | 'time' | 'difficulty' | 'category';  // ← Добавь 'category'
   limit?: number;
   page?: number;
 }

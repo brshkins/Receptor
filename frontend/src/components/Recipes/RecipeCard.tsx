@@ -1,17 +1,19 @@
+// src/components/Recipes/RecipeCard.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FavoriteButton } from './FavoriteButton';
+import { translateCategory, getCategoryEmoji, translateRecipeTitle, formatTime } from '../../utils/translations';
 import styles from './Recipes.module.css';
 
 interface RecipeCardProps {
   id: number | string;
   title: string;
   description?: string;
-  image?: string;        // ← бэкенд возвращает image
-  imageUrl?: string;     // ← оставляем для совместимости
-  cooking_time?: number; // ← бэкенд возвращает cooking_time
-  cookingTime?: number;  // ← оставляем для совместимости
-  category?: string;     // ← вместо difficulty
+  image?: string;
+  imageUrl?: string;
+  cooking_time?: number;
+  cookingTime?: number;
+  category?: string;
   difficulty?: string;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string) => void;
@@ -30,46 +32,40 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   isFavorite = false,
   onFavoriteToggle
 }) => {
-  // Используем то, что пришло
   const img = image || imageUrl;
   const time = cooking_time || cookingTime;
-  const diff = difficulty || category;
-  
-  const getDifficultyText = (diff?: string) => {
-    if (!diff) return '';
-    const map: Record<string, string> = {
-      'easy': '🥚 Легко',
-      'medium': '👨‍🍳 Средне',
-      'hard': '🔥 Сложно',
-      'pasta': '🍝 Паста',
-      'soup': '🍲 Суп',
-      'salad': '🥗 Салат',
-      'dessert': '🍰 Десерт'
-    };
-    return map[diff] || diff;
-  };
+  const titleRu = translateRecipeTitle(title);
+  const categoryRu = translateCategory(category);
+  const emoji = getCategoryEmoji(category);
+  const timeFormatted = formatTime(time); // "25 мин" или "1 ч 20 мин"
 
   return (
     <div className={styles.recipeCard}>
       <Link to={`/recipes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
         {img ? (
-          <img src={img} alt={title} className={styles.recipeImage} />
+          <img src={img} alt={titleRu} className={styles.recipeImage} />
         ) : (
-          <div className={styles.recipeImage} style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '48px'
-          }}>
-            {getCategoryEmoji(category)}
+          <div className={styles.recipeImagePlaceholder}>
+            <span className={styles.placeholderEmoji}>{emoji}</span>
           </div>
         )}
         <div className={styles.recipeContent}>
-          <h3 className={styles.recipeTitle}>{title}</h3>
+          <h3 className={styles.recipeTitle}>{titleRu}</h3>
           
+          {/* Время и сложность */}
           <div className={styles.recipeMeta}>
-            {time && <span>⏱️ {time} мин</span>}
-            {diff && <span>📊 {getDifficultyText(diff)}</span>}
+            {time && (
+              <span className={styles.metaItem}>
+                <span className={styles.metaIcon}>⏱️</span>
+                <span>{timeFormatted}</span>
+              </span>
+            )}
+            {categoryRu && (
+              <span className={styles.metaItem}>
+                <span className={styles.metaIcon}>{emoji}</span>
+                <span>{categoryRu}</span>
+              </span>
+            )}
           </div>
         </div>
       </Link>
@@ -81,19 +77,4 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       />
     </div>
   );
-};
-
-// Эмодзи по категории
-const getCategoryEmoji = (category?: string): string => {
-  const map: Record<string, string> = {
-    'pasta': '🍝',
-    'soup': '🍲',
-    'salad': '🥗',
-    'dessert': '🍰',
-    'meat': '🥩',
-    'fish': '🐟',
-    'breakfast': '🍳',
-    'bakery': '🥐'
-  };
-  return map[category || ''] || '🍳';
 };

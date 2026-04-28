@@ -80,6 +80,95 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         
         <div className={styles.filterContent}>
           {/* Плашка с фильтрами сложности */}
+          // В filterContent добавь:
+          <div className={styles.filterChipContainer}>
+            <div className={styles.filterChipLabel}>
+              <span className={styles.labelIcon}>🍽️</span>
+              <span>Категория</span>
+            </div>
+            <div className={styles.chipGroup}>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${!localFilters.category ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: undefined };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                Все
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'pasta' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'pasta' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍝 Паста
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'meat' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'meat' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥩 Мясо
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'vegetarian' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'vegetarian' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥬 Вегетарианское
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'breakfast' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'breakfast' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍳 Завтрак
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'dessert' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'dessert' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍰 Десерт
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'soup' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'soup' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍲 Суп
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'salad' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'salad' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥗 Салат
+              </button>
+            </div>
+          </div>
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
               <span className={styles.labelIcon}>📊</span>

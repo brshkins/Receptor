@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { recipesService } from '../services/recipesService';
 import { favoritesService } from '../services/favoritesService';
 import { Recipe, RecipeFilters as FilterType } from '../types';
+import { translateCategory } from '../utils/translations';
 import styles from './Pages.module.css';
 
 const RecipesPage: React.FC = () => {
@@ -14,197 +15,117 @@ const RecipesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterType>({
-    sort: 'asc',
-    sortBy: 'name'
-  });
+  const [filters, setFilters] = useState<FilterType>({ sort: 'asc', sortBy: 'name' });
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  const loadFavoriteIds = useCallback(async () => {
+  try {
+    const response = await favoritesService.getAll();
+    console.log('Ответ избранного:', response);
+    
+    // response может быть { data: [...] } или просто массивом
+    const favorites = Array.isArray(response) 
+      ? response 
+      : (response as any)?.data || [];
+    
+    if (Array.isArray(favorites)) {
+      const ids = new Set(favorites.map((f: any) => String(f.id || f.recipe_id)));
+      console.log('ID избранных:', Array.from(ids));
+      setFavoriteIds(ids);
+      return ids;
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки избранного:', error);
+  }
+  return new Set<string>();
+}, []);
 
   const loadRecipes = useCallback(async () => {
     try {
       setLoading(true);
-      
-      const response = await recipesService.getAll({
-        search: searchTerm || undefined,
-      });
-      
-      console.log('Ответ бэкенда:', response);
-      
+      const response = await recipesService.getAll({ search: searchTerm || undefined });
+
       let recipesList: Recipe[] = [];
-      
-      if (Array.isArray(response)) {
-        recipesList = response;
-      } else if (response && typeof response === 'object') {
-        if ('data' in response && Array.isArray((response as any).data)) {
-          recipesList = (response as any).data;
-        } else if ('recipes' in response && Array.isArray((response as any).recipes)) {
-          recipesList = (response as any).recipes;
-        } else {
-          const values = Object.values(response);
-          recipesList = values.filter((item): item is Recipe => {
-            return item !== null && 
-                   typeof item === 'object' && 
-                   'id' in item && 
-                   'title' in item;
-          });
-        }
+      if (Array.isArray(response)) recipesList = response;
+      else if (response && typeof response === 'object' && 'data' in response && Array.isArray((response as any).data)) {
+        recipesList = (response as any).data;
       }
-      
-      console.log('Массив рецептов:', recipesList);
-      
-      let filteredRecipes: Recipe[] = [...recipesList];
-      
-      // Фильтрация по сложности
-      if (filters.difficulty) {
-        filteredRecipes = filteredRecipes.filter(recipe => {
-          const recipeDiff = recipe.difficulty || recipe.category || '';
-          return recipeDiff === filters.difficulty;
-        });
-      }
-      
-      // Сортировка
+
+      const favIds = await loadFavoriteIds();
+      let filtered = recipesList.map(r => ({ ...r, isFavorite: favIds.has(String(r.id)) }));
+
+      if (filters.category) filtered = filtered.filter(r => r.category === filters.category);
+
       if (filters.sortBy === 'time') {
-        filteredRecipes.sort((a, b) => {
-          const timeA = a.cookingTime ?? a.cooking_time ?? 0;
-          const timeB = b.cookingTime ?? b.cooking_time ?? 0;
-          return filters.sort === 'asc' ? timeA - timeB : timeB - timeA;
-        });
-      } else if (filters.sortBy === 'difficulty') {
-        const difficultyOrder: Record<string, number> = { 
-          easy: 1, medium: 2, hard: 3 
-        };
-        filteredRecipes.sort((a, b) => {
-          const diffA = a.difficulty || a.category || '';
-          const diffB = b.difficulty || b.category || '';
-          const valueA = difficultyOrder[diffA] ?? 0;
-          const valueB = difficultyOrder[diffB] ?? 0;
-          return filters.sort === 'asc' ? valueA - valueB : valueB - valueA;
+        filtered.sort((a, b) => {
+          const ta = a.cookingTime ?? a.cooking_time ?? 0;
+          const tb = b.cookingTime ?? b.cooking_time ?? 0;
+          return filters.sort === 'asc' ? ta - tb : tb - ta;
         });
       } else if (filters.sortBy === 'name') {
-        filteredRecipes.sort((a, b) => {
-          const titleA = a.title || '';
-          const titleB = b.title || '';
-          return filters.sort === 'asc' 
-            ? titleA.localeCompare(titleB)
-            : titleB.localeCompare(titleA);
+        filtered.sort((a, b) => filters.sort === 'asc' ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title));
+      } else if (filters.sortBy === 'category') {
+        filtered.sort((a, b) => {
+          const ca = translateCategory(a.category) || '';
+          const cb = translateCategory(b.category) || '';
+          return filters.sort === 'asc' ? ca.localeCompare(cb) : cb.localeCompare(ca);
         });
       }
-      
-      setRecipes(filteredRecipes);
+
+      setRecipes(filtered);
     } catch (error) {
       console.error('Failed to load recipes:', error);
       setRecipes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, filters]);
+    } finally { setLoading(false); }
+  }, [searchTerm, filters, loadFavoriteIds]);
 
-  useEffect(() => {
-    loadRecipes();
-  }, [loadRecipes]);
+  useEffect(() => { loadRecipes(); }, [loadRecipes]);
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-  };
-
-  const handleFilterChange = (newFilters: FilterType) => {
-    setFilters(newFilters);
-  };
+  const handleSearch = (value: string) => setSearchTerm(value);
+  const handleFilterChange = (newFilters: FilterType) => setFilters(newFilters);
 
   const handleFavoriteToggle = async (id: string) => {
     const recipe = recipes.find(r => String(r.id) === id);
     if (!recipe) return;
-    
-    // Оптимистичное обновление UI
-    setRecipes(prevRecipes => 
-      prevRecipes.map(r => 
-        String(r.id) === id 
-          ? { ...r, isFavorite: !r.isFavorite }
-          : r
-      )
-    );
-    
-    // Отправка на бэкенд
+    const newState = !recipe.isFavorite;
+
+    setRecipes(prev => prev.map(r => String(r.id) === id ? { ...r, isFavorite: newState } : r));
+    setFavoriteIds(prev => { const s = new Set(prev); newState ? s.add(id) : s.delete(id); return s; });
+
     try {
-      if (recipe.isFavorite) {
-        await favoritesService.remove(id);
-      } else {
-        await favoritesService.add(id);
-      }
-    } catch (error) {
-      console.error('Ошибка избранного:', error);
-      // Откатываем при ошибке
-      setRecipes(prevRecipes => 
-        prevRecipes.map(r => 
-          String(r.id) === id 
-            ? { ...r, isFavorite: !r.isFavorite }
-            : r
-        )
-      );
+      if (newState) await favoritesService.add(id);
+      else await favoritesService.remove(id);
+    } catch (error: any) {
+      if (error?.response?.status === 409 && newState) return;
+      if (error?.response?.status === 401) alert('Чтобы добавить в избранное, войдите в аккаунт');
+      setRecipes(prev => prev.map(r => String(r.id) === id ? { ...r, isFavorite: !newState } : r));
+      setFavoriteIds(prev => { const s = new Set(prev); newState ? s.delete(id) : s.add(id); return s; });
     }
   };
 
-  // Проверяем, активны ли фильтры
-  const isFilterActive = filters.difficulty !== undefined || 
-                         filters.sort !== 'asc' || 
-                         filters.sortBy !== 'name';
+  const isFilterActive = filters.category !== undefined || filters.sort !== 'asc' || filters.sortBy !== 'name';
 
-  if (loading && recipes.length === 0) {
-    return <LoadingSpinner text="Загружаем рецепты..." />;
-  }
+  if (loading && recipes.length === 0) return <LoadingSpinner text="Загружаем рецепты..." />;
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>
-          <span className={styles.pageTitleEmoji}>📖</span>
-          <span className={styles.pageTitleText}>Все рецепты</span>
-        </h1>
-        <p className={styles.pageDescription}>
-          Найди идеальный рецепт из нашей коллекции
-        </p>
+        <h1 className={styles.pageTitle}><span className={styles.pageTitleEmoji}>📖</span><span className={styles.pageTitleText}>Все рецепты</span></h1>
+        <p className={styles.pageDescription}>Найди идеальный рецепт из нашей коллекции</p>
       </div>
-      
       <div className={styles.searchSection}>
-        <SearchBar 
-          onSearch={handleSearch} 
-          onFilterClick={() => setIsFilterOpen(true)}
-          placeholder="Поиск по названию..."
-          initialValue={searchTerm}
-          isFilterActive={isFilterActive}
-        />
+        <SearchBar onSearch={handleSearch} onFilterClick={() => setIsFilterOpen(true)} placeholder="Поиск по названию..." initialValue={searchTerm} isFilterActive={isFilterActive} />
       </div>
-      
-      <FilterPanel
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-      />
-      
-      {loading ? (
-        <LoadingSpinner text="Обновляем..." />
-      ) : (
-        <>
-          {recipes.length > 0 ? (
-            <>
-              <p className={styles.resultsCount}>
-                Найдено рецептов: {recipes.length}
-              </p>
-              <RecipeList 
-                recipes={recipes} 
-                onFavoriteToggle={handleFavoriteToggle}
-              />
-            </>
-          ) : (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>🔍</div>
-              <h3 className={styles.emptyTitle}>Рецепты не найдены</h3>
-              <p className={styles.emptyText}>
-                Попробуйте изменить параметры поиска или фильтры
-              </p>
-            </div>
-          )}
-        </>
+      <FilterPanel filters={filters} onFilterChange={handleFilterChange} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      {loading ? <LoadingSpinner text="Обновляем..." /> : (
+        recipes.length > 0 ? (
+          <>
+            <p className={styles.resultsCount}>Найдено рецептов: {recipes.length}</p>
+            <RecipeList recipes={recipes} onFavoriteToggle={handleFavoriteToggle} />
+          </>
+        ) : (
+          <div className={styles.emptyState}><div className={styles.emptyIcon}>🔍</div><h3 className={styles.emptyTitle}>Рецепты не найдены</h3><p className={styles.emptyText}>Попробуйте изменить параметры поиска или фильтры</p></div>
+        )
       )}
     </div>
   );

@@ -207,8 +207,8 @@
 .profileStats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .statCard {
@@ -216,6 +216,34 @@
   padding: 20px;
   background: var(--yellow-soft);
   border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.statCard:hover {
+  background: white;
+  border-color: var(--orange-primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+  transition: transform 0.3s ease;
+}
+
+.statCard:hover .statValue {
+  transform: scale(1.1);
+}
+
+.statLabel {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 .statValue {
@@ -2017,4 +2045,128 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* Карточки действий в профиле */
+.profileActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.actionCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--yellow-soft);
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.actionCard:hover {
+  background: white;
+  border-color: var(--orange-primary);
+  transform: translateX(8px);
+  box-shadow: var(--shadow-md);
+}
+
+.actionIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.actionCard:hover .actionIcon {
+  transform: scale(1.15);
+}
+
+.actionInfo {
+  flex: 1;
+}
+
+.actionInfo h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+  margin-bottom: 4px;
+}
+
+.actionInfo p {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+}
+
+.actionArrow {
+  font-size: 1.5rem;
+  color: var(--orange-light);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.actionCard:hover .actionArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--orange-primary);
+}
+
+/* Кнопка выхода */
+.logoutButton {
+  width: 100%;
+  margin-top: 8px;
+  padding: 18px 24px;
+  background: white;
+  border: 2px solid #ffcdd2;
+  border-radius: var(--radius-xl);
+  color: #c62828;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.logoutButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(244, 67, 54, 0.05), transparent);
+  transition: left 0.5s ease;
+}
+
+.logoutButton:hover::before {
+  left: 100%;
+}
+
+.logoutButton:hover {
+  background: #ffebee;
+  border-color: #ef5350;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(244, 67, 54, 0.15);
+}
+
+.logoutButton:active {
+  transform: translateY(0);
+}
+
+.logoutIcon {
+  font-size: 1.3rem;
+  transition: transform 0.3s ease;
+}
+
+.logoutButton:hover .logoutIcon {
+  transform: translateX(-4px);
 }

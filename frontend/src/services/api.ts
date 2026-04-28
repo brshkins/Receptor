@@ -1,3 +1,4 @@
+// src/services/api.ts
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -11,25 +12,25 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true,
     });
 
-    // Интерцептор для токена
     this.client.interceptors.request.use((config) => {
       const token = localStorage.getItem('token');
-      console.log('Токен из localStorage:', token); // ← Добавь лог
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
 
-    // Интерцептор для ответов
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/auth';
+          if (!window.location.pathname.includes('/auth')) {
+            window.location.href = '/auth';
+          }
         }
         return Promise.reject(error);
       }
@@ -53,11 +54,6 @@ class ApiClient {
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(url, config);
-    return response.data;
-  }
-
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.patch<T>(url, data, config);
     return response.data;
   }
 }

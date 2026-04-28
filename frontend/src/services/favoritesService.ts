@@ -4,7 +4,9 @@ import { Recipe } from '../types';
 
 export const favoritesService = {
   async getAll(): Promise<Recipe[]> {
-    return apiClient.get<Recipe[]>('/favorites');
+    const response = await apiClient.get<any>('/favorites');
+    // Бэкенд возвращает { data: [...] }
+    return response?.data || response || [];
   },
 
   async add(recipeId: string | number): Promise<void> {
