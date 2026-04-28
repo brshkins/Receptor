@@ -49,8 +49,9 @@ export const recipesService = {
     return Array.isArray(recipes) ? recipes : [];
   },
 
-  async getById(id: string | number): Promise<Recipe> {
+  async getById(id: string | number): Promise<any> {
     const response = await apiClient.get<any>(`/recipes/${id}`);
+    // Бэкенд может вернуть { data: {...} } или сразу объект
     return response?.data || response;
   },
 

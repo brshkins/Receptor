@@ -6,46 +6,69 @@ import styles from './Pages.module.css';
 const HomePage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
+      {/* Hero секция с информацией */}
       <div className={styles.hero}>
         <h1 className={styles.heroTitle}>
           <span className={styles.heroTitleEmoji}>🍳</span>
-          <span className={styles.heroTitleText}>Добро пожаловать в Receptor AI</span>
+          <span className={styles.heroTitleText}>Receptor AI</span>
         </h1>
         <p className={styles.heroSubtitle}>
-          Придумаем рецепт из того, что есть в холодильнике
+          Ваш умный помощник в мире кулинарии
         </p>
-        <div className={styles.heroButtons}>
-          <Link to="/match" className={`${styles.heroButton} ${styles.heroButtonPrimary}`}>
-            🔍 Подобрать рецепт
-          </Link>
-          <Link to="/recipes" className={`${styles.heroButton} ${styles.heroButtonSecondary}`}>
-            📖 Все рецепты
-          </Link>
+        
+        {/* Информационный блок */}
+        <div className={styles.infoBadges}>
+          <div className={styles.infoBadge}>
+            <span className={styles.badgeIcon}>📖</span>
+            <span className={styles.badgeText}>129+ рецептов</span>
+          </div>
+          <div className={styles.infoBadge}>
+            <span className={styles.badgeIcon}>🔍</span>
+            <span className={styles.badgeText}>Умный подбор</span>
+          </div>
+          <div className={styles.infoBadge}>
+            <span className={styles.badgeIcon}>📸</span>
+            <span className={styles.badgeText}>Поиск по фото</span>
+          </div>
         </div>
+        
+        <p className={styles.heroDescription}>
+          Сфотографируйте продукты, выберите ингредиенты или просто найдите 
+          рецепт — мы поможем приготовить вкусное блюдо из того, что есть под рукой
+        </p>
       </div>
 
+      {/* Кликабельные карточки-ссылки */}
       <div className={styles.features}>
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>🤖</div>
-          <h3 className={styles.featureTitle}>ИИ-подбор</h3>
+        <Link to="/match" className={styles.featureCard}>
+          <div className={styles.featureIcon}>📸🤖</div>
+          <h3 className={styles.featureTitle}>Подбор рецептов</h3>
           <p className={styles.featureDescription}>
-            Загрузите фото продуктов или выберите ингредиенты — мы найдём идеальный рецепт
+            Сфотографируйте продукты или выберите вручную — искусственный интеллект 
+            подберёт подходящие рецепты из нашей базы
           </p>
-        </div>
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>📚</div>
-          <h3 className={styles.featureTitle}>Сотни рецептов</h3>
+          <span className={styles.featureArrow}>→</span>
+        </Link>
+        
+        <Link to="/recipes" className={styles.featureCard}>
+          <div className={styles.featureIcon}>📚🍝</div>
+          <h3 className={styles.featureTitle}>Все рецепты</h3>
           <p className={styles.featureDescription}>
-            Огромная база проверенных рецептов с подробными инструкциями
+            129 проверенных рецептов с подробными инструкциями, 
+            ингредиентами и временем приготовления
           </p>
-        </div>
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>❤️</div>
+          <span className={styles.featureArrow}>→</span>
+        </Link>
+        
+        <Link to="/favorites" className={styles.featureCard}>
+          <div className={styles.featureIcon}>❤️📌</div>
           <h3 className={styles.featureTitle}>Избранное</h3>
           <p className={styles.featureDescription}>
-            Сохраняйте любимые рецепты и возвращайтесь к ним в любое время
+            Сохраняйте любимые рецепты, чтобы они всегда были под рукой. 
+            Ваша личная кулинарная книга
           </p>
-        </div>
+          <span className={styles.featureArrow}>→</span>
+        </Link>
       </div>
     </div>
   );

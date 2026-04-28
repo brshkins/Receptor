@@ -1,3 +1,4 @@
+// src/components/Layout/Header.tsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +9,7 @@ export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
+  const isHomePage = location.pathname === '/';
 
   return (
     <header className={styles.header}>
@@ -25,7 +27,7 @@ export const Header: React.FC = () => {
             <span>📖</span> Рецепты
           </Link>
           <Link to="/match" className={`${styles.navLink} ${isActive('/match') ? styles.active : ''}`}>
-            <span>🤖</span> ИИ-подбор
+            <span>🔍</span> Подбор
           </Link>
           <Link to="/favorites" className={`${styles.navLink} ${isActive('/favorites') ? styles.active : ''}`}>
             <span>❤️</span> Избранное

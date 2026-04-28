@@ -131,6 +131,7 @@
   margin-top: 48px;
 }
 
+/* Карточки на главной — кликабельные */
 .featureCard {
   text-align: center;
   padding: 32px 24px;
@@ -138,16 +139,27 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
 }
 
 .featureCard:hover {
   transform: translateY(-8px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--orange-primary);
 }
 
 .featureIcon {
   font-size: 48px;
   margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.featureCard:hover .featureIcon {
+  transform: scale(1.1);
 }
 
 .featureTitle {
@@ -162,6 +174,21 @@
   line-height: 1.6;
 }
 
+.featureArrow {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 1.5rem;
+  color: var(--orange-light);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.featureCard:hover .featureArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--orange-primary);
+}
 /* Профиль */
 .profileCard {
   background: white;
@@ -2169,4 +2196,269 @@
 
 .logoutButton:hover .logoutIcon {
   transform: translateX(-4px);
+}
+/* Детальный просмотр рецепта */
+.backButtonBig {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  border: 2px solid var(--orange-light);
+  border-radius: var(--radius-xl);
+  color: var(--orange-deep);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+}
+
+.backButtonBig:hover {
+  background: var(--yellow-soft);
+  border-color: var(--orange-primary);
+  transform: translateX(-4px);
+}
+
+.recipeDetail {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--orange-light);
+}
+
+.detailHeader {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.detailImagePlaceholder {
+  width: 200px;
+  height: 200px;
+  min-width: 200px;
+  background: var(--gradient-soft);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailEmoji {
+  font-size: 80px;
+}
+
+.detailHeaderInfo {
+  flex: 1;
+}
+
+.detailTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #4A3525;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.detailMeta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.detailMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--yellow-soft);
+  border-radius: 100px;
+  color: #8B6F5E;
+  font-weight: 500;
+}
+
+.metaIcon {
+  font-size: 1.1rem;
+}
+
+.detailDescription {
+  color: #8B6F5E;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.detailSection {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid var(--orange-light);
+}
+
+.detailSectionTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Ингредиенты */
+.ingredientsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.ingredientItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--yellow-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--orange-light);
+}
+
+.ingredientName {
+  font-weight: 600;
+  color: #4A3525;
+}
+
+.ingredientAmount {
+  color: #8B6F5E;
+  font-size: 0.9rem;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+/* Шаги */
+.stepsList {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepItem {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--yellow-soft);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--orange-primary);
+  transition: all 0.3s ease;
+}
+
+.stepItem:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background: var(--gradient-warm);
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.stepText {
+  color: #4A3525;
+  line-height: 1.6;
+  padding-top: 4px;
+}
+
+.noData {
+  color: #A38B7A;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .detailHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .detailImagePlaceholder {
+    width: 150px;
+    height: 150px;
+    min-width: 150px;
+  }
+  
+  .detailTitle {
+    font-size: 1.5rem;
+  }
+  
+  .ingredientsList {
+    grid-template-columns: 1fr;
+  }
+}
+/* Информационные бейджи в hero */
+.infoBadges {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.infoBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 100px;
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.badgeIcon {
+  font-size: 1.3rem;
+}
+
+.badgeText {
+  white-space: nowrap;
+}
+
+/* Описание в hero */
+.heroDescription {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto 24px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .infoBadges {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .heroDescription {
+    font-size: 0.95rem;
+    padding: 0 16px;
+  }
 }
