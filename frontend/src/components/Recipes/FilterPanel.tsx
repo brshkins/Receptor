@@ -79,8 +79,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
         
         <div className={styles.filterContent}>
-          {/* Плашка с фильтрами сложности */}
-          // В filterContent добавь:
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
               <span className={styles.labelIcon}>🍽️</span>
@@ -166,6 +164,26 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 }}
               >
                 🥗 Салат
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'dinner' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'dinner' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🌙 Ужин
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'lunch' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'lunch' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍴 Обед
               </button>
             </div>
           </div>

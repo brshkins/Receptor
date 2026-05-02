@@ -55,6 +55,46 @@ export interface RegisterData {
   password: string;
 }
 
+/** POST /auth/register, /auth/login — payload после unwrap */
+export interface AuthTokenDto {
+  token: string;
+}
+
+/** GET /auth/me — payload после unwrap */
+export interface MeDto {
+  id: number;
+  email: string;
+  name: string;
+}
+
+/** GET /recipes, GET /recipes/:id, GET /favorites — элемент списка */
+export interface RecipeListItemDto {
+  id: number;
+  title: string;
+  image: string;
+  cooking_time: number;
+  category: string;
+}
+
+/** GET /recipes/:id/details */
+export interface RecipeDetailsDto extends RecipeListItemDto {
+  description: string;
+  steps: string[];
+  /** Имена ингредиентов из backend (`ingredients`); при отсутствии ключа — пусто в UI */
+  ingredients?: string[];
+}
+
+/** POST /match/by-ingredients, POST /upload — элемент результата (строго по backend). */
+export type MatchResponse = {
+  recipe_id: number;
+  title: string;
+  image: string;
+  match_percent: number;
+  ingredients?: string[];
+  missing_ingredients: string[];
+};
+
+/** @deprecated используйте AuthTokenDto + MeDto */
 export interface AuthResponse {
   token: string;
   user: User;

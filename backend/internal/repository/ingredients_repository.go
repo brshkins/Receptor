@@ -27,13 +27,22 @@ func (r *ingredientsRepository) GetByNames(ctx context.Context, names []string) 
 		WHERE EXISTS (
 			SELECT 1
 			FROM unnest($1::text[]) AS q(inp)
-			WHERE LOWER(TRIM(i.name)) = LOWER(TRIM(q.inp))
+			WHERE TRIM(q.inp) <> ''
+			AND (
+				LOWER(TRIM(i.name)) LIKE '%' || LOWER(TRIM(q.inp)) || '%'
+				OR LOWER(TRIM(q.inp)) LIKE '%' || LOWER(TRIM(i.name)) || '%'
+			)
 		)
 		OR EXISTS (
 			SELECT 1
 			FROM unnest(COALESCE(i.aliases, ARRAY[]::text[])) AS a(alias),
 			     unnest($1::text[]) AS q(inp)
-			WHERE LOWER(TRIM(a.alias)) = LOWER(TRIM(q.inp))
+			WHERE TRIM(q.inp) <> ''
+			AND TRIM(a.alias) <> ''
+			AND (
+				LOWER(TRIM(a.alias)) LIKE '%' || LOWER(TRIM(q.inp)) || '%'
+				OR LOWER(TRIM(q.inp)) LIKE '%' || LOWER(TRIM(a.alias)) || '%'
+			)
 		)`
 
 	rows, err := r.db.Query(ctx, q, names)

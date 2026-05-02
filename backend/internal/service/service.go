@@ -38,6 +38,7 @@ type MatchService interface {
 }
 
 // Загрузка изображения, распознавание ингредиентов и подбор рецептов.
+// images — одно или несколько фото; детекции объединяются перед матчем.
 type UploadService interface {
-	UploadAndMatch(ctx context.Context, image []byte) ([]dto.MatchResponse, error)
+	UploadAndMatch(ctx context.Context, images [][]byte) ([]dto.MatchResponse, error)
 }

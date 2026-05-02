@@ -51,29 +51,30 @@ func parseFastAPIDetail(raw json.RawMessage) string {
 	return ""
 }
 
-func (c *httpMLClient) DetectIngredients(ctx context.Context, image []byte) ([]string, error) {
+func (c *httpMLClient) DetectIngredients(ctx context.Context, b []byte) ([]string, error) {
 	if c.baseURL == "" {
 		return nil, fmt.Errorf("ML_URL is required")
 	}
 
-	var body bytes.Buffer
-	w := multipart.NewWriter(&body)
-	fw, err := w.CreateFormFile("file", "image")
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", "photo.jpg")
 	if err != nil {
 		return nil, err
 	}
-	if _, err := fw.Write(image); err != nil {
+	if _, err := part.Write(b); err != nil {
 		return nil, err
 	}
-	if err := w.Close(); err != nil {
+	if err := writer.Close(); err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/detect", &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/detect", body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

@@ -11,5 +11,6 @@ type MatchResponse struct {
 	Title              string   `json:"title"`
 	Image              string   `json:"image"`
 	MatchPercent       float64  `json:"match_percent"`
+	Ingredients        []string `json:"ingredients"`
 	MissingIngredients []string `json:"missing_ingredients"`
 }

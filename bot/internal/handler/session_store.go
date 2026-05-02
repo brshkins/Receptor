@@ -46,8 +46,6 @@ func (s *SessionStore) GetOrCreate(userID int64) *UserSession {
 	return st
 }
 
-// GetCopy returns a copy of the user session.
-// It never exposes internal pointers, so callers can't race on session fields.
 func (s *SessionStore) GetCopy(userID int64) UserSession {
 	s.mu.Lock()
 	st := s.sessions[userID]
@@ -75,9 +73,6 @@ func (s *SessionStore) Set(userID int64, state UserState, email, token string) e
 	return s.Save()
 }
 
-// SetState updates only the FSM state without touching token/user fields.
-// Critical: navigation must reset FSM to idle without losing token.
-// SetPanelMessage запоминает сообщение, которое нужно редактировать вместо отправки новых.
 func (s *SessionStore) SetPanelMessage(userID int64, chatID int64, messageID int) error {
 	s.mu.Lock()
 	st := s.sessions[userID]
@@ -137,7 +132,6 @@ func (s *SessionStore) Save() error {
 		return nil
 	}
 
-	// Create a snapshot under lock to avoid races on *UserSession fields.
 	s.mu.RLock()
 	snap := make(map[int64]UserSession, len(s.sessions))
 	for id, st := range s.sessions {

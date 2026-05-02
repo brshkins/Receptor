@@ -1,19 +1,18 @@
 // src/services/favoritesService.ts
 import { apiClient } from './api';
-import { Recipe } from '../types';
+import type { RecipeListItemDto } from '../types';
 
 export const favoritesService = {
-  async getAll(): Promise<Recipe[]> {
-    const response = await apiClient.get<any>('/favorites');
-    // Бэкенд возвращает { data: [...] }
-    return response?.data || response || [];
+  async getAll(): Promise<RecipeListItemDto[]> {
+    const list = await apiClient.get<RecipeListItemDto[]>('/favorites');
+    return Array.isArray(list) ? list : [];
   },
 
   async add(recipeId: string | number): Promise<void> {
-    return apiClient.post<void>(`/favorites/${recipeId}`);
+    await apiClient.post<null>(`/favorites/${recipeId}`);
   },
 
   async remove(recipeId: string | number): Promise<void> {
-    return apiClient.delete<void>(`/favorites/${recipeId}`);
+    await apiClient.delete<null>(`/favorites/${recipeId}`);
   },
 };

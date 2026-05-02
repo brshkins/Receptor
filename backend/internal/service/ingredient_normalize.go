@@ -117,6 +117,29 @@ var ingredientInputToDBName = map[string]string{
 	"beans":          "beans",
 	"вода":           "water",
 	"water":          "water",
+	"мёд":            "honey",
+	"мед":            "honey",
+	"honey":          "honey",
+	"грецкие орехи":  "walnut",
+	"орехи грецкие":  "walnut",
+	"walnut":         "walnut",
+	"walnuts":        "walnut",
+}
+
+// Классы из YOLO (model/research/datasets_merge.FINAL_CLASSES): часть имён не встречается
+// в recipe_ingredients после сида — тогда подбор пустой. Сводим к ближайшему ингредиенту из рецептов.
+// Пустая строка — выкинуть токен (например water не даёт полезного матча).
+var ingredientMLClassToRecipeIngredient = map[string]string{
+	"orange":         "tomato",
+	"yogurt":         "cream",
+	"bread":          "flour",
+	"juice":          "lemon",
+	"instant_noodle": "pasta",
+	"cabbage":        "carrot",
+	"banana":         "apple",
+	"berry":          "sugar",
+	"berries":        "sugar",
+	"water":          "",
 }
 
 func normalizeMatchIngredientNames(in []string) []string {
@@ -125,11 +148,19 @@ func normalizeMatchIngredientNames(in []string) []string {
 	for _, raw := range in {
 		s := strings.ToLower(strings.TrimSpace(raw))
 		s = strings.ReplaceAll(s, "ё", "е")
+		s = strings.Trim(s, " \t\r\n,.;:!?-–—")
+		s = strings.ReplaceAll(s, "_", " ")
 		if s == "" {
 			continue
 		}
 		if canon, ok := ingredientInputToDBName[s]; ok && canon != "" {
 			s = canon
+		}
+		if repl, ok := ingredientMLClassToRecipeIngredient[s]; ok {
+			if repl == "" {
+				continue
+			}
+			s = repl
 		}
 		if _, ok := seen[s]; ok {
 			continue

@@ -1,12 +1,6 @@
 // src/services/authService.ts
 import { apiClient } from './api';
-
-export interface User {
-  id: number | string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
+import type { AuthTokenDto, MeDto } from '../types';
 
 export interface LoginCredentials {
   email: string;
@@ -19,44 +13,25 @@ export interface RegisterData {
   password: string;
 }
 
-export interface AuthResponse {
-  token: string;
-  user: User;
-}
-
 export const authService = {
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await apiClient.post<any>('/auth/register', data);
-    
-    // Бэкенд возвращает { data: { token: "..." } }
-    const token = response?.data?.token || response?.token;
-    const user = response?.data?.user || response?.user;
-    
-    if (token) {
-      localStorage.setItem('token', token);
+  async register(data: RegisterData): Promise<AuthTokenDto> {
+    const out = await apiClient.post<AuthTokenDto>('/auth/register', data);
+    if (out?.token) {
+      localStorage.setItem('token', out.token);
     }
-    
-    return { token, user };
+    return out;
   },
 
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<any>('/auth/login', credentials);
-    
-    // Бэкенд возвращает { data: { token: "..." } }
-    const token = response?.data?.token || response?.token;
-    const user = response?.data?.user || response?.user;
-    
-    if (token) {
-      localStorage.setItem('token', token);
+  async login(credentials: LoginCredentials): Promise<AuthTokenDto> {
+    const out = await apiClient.post<AuthTokenDto>('/auth/login', credentials);
+    if (out?.token) {
+      localStorage.setItem('token', out.token);
     }
-    
-    return { token, user };
+    return out;
   },
 
-  async getMe(): Promise<User> {
-    const response = await apiClient.get<any>('/auth/me');
-    // Бэкенд может возвращать { data: { ... } }
-    return response?.data || response;
+  async getMe(): Promise<MeDto> {
+    return apiClient.get<MeDto>('/auth/me');
   },
 
   logout(): void {
@@ -69,5 +44,5 @@ export const authService = {
 
   getToken(): string | null {
     return localStorage.getItem('token');
-  }
+  },
 };

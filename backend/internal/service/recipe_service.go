@@ -50,6 +50,10 @@ func (s *recipeService) GetDetails(ctx context.Context, id int64) (*dto.RecipeDe
 	for _, st := range steps {
 		outSteps = append(outSteps, st.Description)
 	}
+	ingredients, err := s.recipes.GetIngredientNamesByRecipeID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	return &dto.RecipeDetailsResponse{
 		ID:          r.ID,
 		Title:       r.Title,
@@ -58,6 +62,7 @@ func (s *recipeService) GetDetails(ctx context.Context, id int64) (*dto.RecipeDe
 		Category:    r.Category,
 		Description: r.Description,
 		Steps:       outSteps,
+		Ingredients: ingredients,
 	}, nil
 }
 

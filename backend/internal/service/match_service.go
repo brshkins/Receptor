@@ -98,6 +98,12 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 		}
 		sort.Strings(missing)
 
+		allIng := make([]string, 0, len(b.byID))
+		for _, name := range b.byID {
+			allIng = append(allIng, name)
+		}
+		sort.Strings(allIng)
+
 		if matched == 0 {
 			continue
 		}
@@ -108,6 +114,7 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 			Title:              b.title,
 			Image:              b.image,
 			MatchPercent:       pct,
+			Ingredients:        allIng,
 			MissingIngredients: missing,
 		})
 	}

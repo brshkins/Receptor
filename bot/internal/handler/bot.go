@@ -37,23 +37,19 @@ type UserSession struct {
 	Email string
 	Token string
 
-	// AuthFlow is "login" or "register" when in auth FSM states.
 	AuthFlow string
 	Name     string
 
-	// Persisted user profile info from GET /auth/me.
 	ProfileID    int64
 	ProfileEmail string
 	ProfileName  string
 
-	// Navigation context for nav:back.
-	ActiveNav       string // recipes|favorites|match|profile|menu
+	ActiveNav       string 
 	RecipesLastPage int
 	FavsLastPage    int
-	BackNav         string // recipes|favorites|match|profile|menu
+	BackNav         string 
 	BackPage        int
 
-	// Одно «окно» диалога: последнее сообщение бота с inline-клавиатурой (редактируем его).
 	PanelChatID    int64 `json:"panel_chat_id,omitempty"`
 	PanelMessageID int   `json:"panel_message_id,omitempty"`
 }
@@ -113,7 +109,6 @@ func (h *TelegramHandler) loginKeyboard() *tgInlineKeyboardMarkup {
 	}
 }
 
-// Одна кнопка «в меню» вместо дублирования четырёх пунктов под длинными списками.
 func (h *TelegramHandler) compactMenuRow() []tgInlineKeyboardButton {
 	return []tgInlineKeyboardButton{{Text: "🏠 В меню", CallbackData: "nav:menu"}}
 }
@@ -171,7 +166,7 @@ func localizeRecipeTitle(title string) string {
 	return recipeTitleFallback(title)
 }
 
-// Частые английские слова в названиях рецептов → нейтральные русские подписи (демо).
+// Частые английские слова в названиях рецептов → нейтральные русские подписи.
 var recipeTitleWordENtoRU = map[string]string{
 	"chicken": "курица", "beef": "говядина", "pork": "свинина", "turkey": "индейка",
 	"soup": "суп", "pasta": "паста", "salad": "салат", "toast": "тост", "bread": "хлеб",
@@ -193,8 +188,9 @@ func recipeTitleFallback(title string) string {
 	if title == "" {
 		return "—"
 	}
+	// Уже кириллица — не трогаем. Символы вроде é в «sauté» не должны отключать перевод.
 	for _, r := range title {
-		if r > 127 {
+		if unicode.Is(unicode.Cyrillic, r) {
 			return title
 		}
 	}
@@ -222,7 +218,6 @@ func recipeTitleFallback(title string) string {
 			}
 		}
 		if allLatin && len(w) > 0 {
-			// Не показываем сырой английский в демо.
 			continue
 		}
 		runes := []rune(strings.ToLower(w))
@@ -237,24 +232,6 @@ func recipeTitleFallback(title string) string {
 	return strings.Join(out, " ")
 }
 
-func recipeDescriptionLooksEnglish(s string) bool {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return false
-	}
-	hasLetter := false
-	for _, r := range s {
-		if unicode.IsLetter(r) {
-			hasLetter = true
-		}
-		if unicode.Is(unicode.Cyrillic, r) {
-			return false
-		}
-	}
-	return hasLetter
-}
-
-// Filled from seeds + extras in recipe_title_ru_generated.go (init).
 var recipeTitleENToRU = make(map[string]string)
 
 func parseIngredients(s string) []string {
@@ -265,7 +242,7 @@ func parseIngredients(s string) []string {
 
 	parts := strings.FieldsFunc(s, func(r rune) bool {
 		switch r {
-		case ' ', '\n', '\t', ',', ';':
+		case ' ', '\n', '\t', ',', ';', ':':
 			return true
 		default:
 			return false
@@ -276,10 +253,10 @@ func parseIngredients(s string) []string {
 	seen := make(map[string]struct{}, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
+		p = strings.Trim(p, ".,;:!?-–—")
 		if p == "" {
 			continue
 		}
-		p = strings.ToLower(p)
 		if _, ok := seen[p]; ok {
 			continue
 		}
@@ -298,8 +275,9 @@ func (h *TelegramHandler) sendMatches(ctx context.Context, chatID int64, userID 
 	}
 
 	const (
-		maxShownMatches  = 5
-		maxMissingToShow = 4
+		maxShownMatches   = 5
+		maxMissingToShow  = 4
+		maxIngredientsRow = 14
 	)
 
 	shown := matches
@@ -323,6 +301,23 @@ func (h *TelegramHandler) sendMatches(ctx context.Context, chatID int64, userID 
 		b.WriteString(strconv.Itoa(pct))
 		b.WriteString("% совпадение по продуктам\n")
 
+		if len(m.Ingredients) > 0 {
+			b.WriteString("🥕 Ингредиенты: ")
+			showIng := m.Ingredients
+			if len(showIng) > maxIngredientsRow {
+				showIng = showIng[:maxIngredientsRow]
+			}
+			ruIng := make([]string, 0, len(showIng))
+			for _, x := range showIng {
+				ruIng = append(ruIng, localizeIngredientDisplayName(x))
+			}
+			b.WriteString(strings.Join(ruIng, ", "))
+			if remain := len(m.Ingredients) - len(showIng); remain > 0 {
+				b.WriteString(fmt.Sprintf(" и ещё %d", remain))
+			}
+			b.WriteString("\n")
+		}
+
 		if len(m.MissingIngredients) == 0 {
 			b.WriteString("✨ Можно приготовить прямо сейчас 🎉")
 		} else {
@@ -331,7 +326,11 @@ func (h *TelegramHandler) sendMatches(ctx context.Context, chatID int64, userID 
 			if len(miss) > maxMissingToShow {
 				miss = miss[:maxMissingToShow]
 			}
-			b.WriteString(strings.Join(miss, ", "))
+			ruMiss := make([]string, 0, len(miss))
+			for _, x := range miss {
+				ruMiss = append(ruMiss, localizeIngredientDisplayName(x))
+			}
+			b.WriteString(strings.Join(ruMiss, ", "))
 			if remain := len(m.MissingIngredients) - len(miss); remain > 0 {
 				b.WriteString(fmt.Sprintf(" и ещё %d", remain))
 			}
@@ -382,9 +381,6 @@ func (h *TelegramHandler) answerCallbackQuery(ctx context.Context, callbackQuery
 	return nil
 }
 
-// RunLongPolling starts polling updates via getUpdates and handles:
-// - /start
-// - photos
 func (h *TelegramHandler) RunLongPolling(ctx context.Context) error {
 	if ctx == nil {
 		return fmt.Errorf("ctx is nil")
@@ -400,7 +396,6 @@ func (h *TelegramHandler) RunLongPolling(ctx context.Context) error {
 
 		updates, err := h.getUpdates(ctx, offset, 30)
 		if err != nil {
-			// transient network errors shouldn't kill the bot loop
 			select {
 			case <-time.After(1 * time.Second):
 				continue
@@ -443,7 +438,6 @@ func (h *TelegramHandler) handleMessage(ctx context.Context, msg *tgMessage) err
 
 	text := strings.TrimSpace(msg.Text)
 	if text != "" && strings.HasPrefix(text, "/start") {
-		// /start must not wipe JWT/session; reset only FSM state.
 		_ = h.store.SetState(userID, UserStateIdle)
 		return h.present(ctx, chatID, userID, "👋 Добро пожаловать!\n\nВыберите раздел ниже — подскажем, что приготовить ✨", h.mainMenuKeyboard(), nil)
 	}
@@ -465,7 +459,6 @@ func (h *TelegramHandler) handleMessage(ctx context.Context, msg *tgMessage) err
 func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, userID int64, text string) error {
 	st := h.store.GetCopy(userID)
 
-	// In idle, we still must respond to the user with a helpful navigation.
 	if st.State == UserStateIdle {
 		t := strings.ToLower(strings.TrimSpace(text))
 		switch t {
@@ -480,7 +473,23 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		case "войти", "логин", "login":
 			return h.present(ctx, chatID, userID, "Выберите «🔐 Войти» или «📝 Регистрация».", h.loginKeyboard(), nil)
 		default:
-			return h.present(ctx, chatID, userID, "Нажмите кнопку ниже или напишите «меню».\n\n✨ Главное меню 👇", h.mainMenuKeyboard(), nil)
+			// Сообщение вида «помидор» или «помидор: сыр» вне режима подбора — всё равно делаем матч (не email/ключ).
+			if strings.Contains(text, "@") {
+				return h.present(ctx, chatID, userID, "Нажмите кнопку ниже или напишите «меню».\n\n✨ Главное меню 👇", h.mainMenuKeyboard(), nil)
+			}
+			parsed := parseIngredients(text)
+			if !service.HasIngredientKeyword(parsed) {
+				return h.present(ctx, chatID, userID, "Нажмите кнопку ниже или напишите «меню».\n\nЧтобы подобрать рецепт по продуктам — «🔍 Подбор по продуктам», затем список или фото.\n\n✨ Главное меню 👇", h.mainMenuKeyboard(), nil)
+			}
+			ingredients := service.NormalizeIngredientsForBackend(parsed)
+			if len(ingredients) == 0 {
+				return h.present(ctx, chatID, userID, "Не удалось разобрать продукты. Пример: помидор, сыр, яйцо", h.mainMenuKeyboard(), nil)
+			}
+			matches, err := h.botService.Match(ctx, ingredients)
+			if err != nil {
+				return h.present(ctx, chatID, userID, err.Error(), h.mainMenuKeyboard(), nil)
+			}
+			return h.sendMatches(ctx, chatID, userID, matches, nil)
 		}
 	}
 
@@ -580,10 +589,8 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 			return h.present(ctx, chatID, userID, "Ошибка авторизации: пустой токен", h.withBack(nil), nil)
 		}
 
-		// 1) Save token in session immediately after successful auth (login/register).
 		_ = h.store.Set(userID, UserStateIdle, email, token)
 
-		// 3) Immediately call GET /auth/me.
 		me, err := h.botService.Me(ctx, token)
 		if err != nil {
 			_ = h.store.Set(userID, UserStateIdle, "", token)
@@ -593,7 +600,6 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 			return h.present(ctx, chatID, userID, err.Error(), h.withBack(nil), nil)
 		}
 
-		// 4) Save user in session.
 		sess.ProfileID = me.ID
 		sess.ProfileEmail = me.Email
 		sess.ProfileName = me.Name
@@ -605,7 +611,12 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		return h.present(ctx, chatID, userID, formatProfileCard(me.Email, me.ID), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), nil)
 
 	case UserStateAwaitingIngr:
-		ingredients := parseIngredients(text)
+		parsed := parseIngredients(text)
+		ingredients := service.NormalizeIngredientsForBackend(parsed)
+		if len(ingredients) == 0 {
+			_ = h.store.Set(userID, UserStateAwaitingIngr, "", st.Token)
+			return h.present(ctx, chatID, userID, "Не удалось разобрать список. Напишите продукты через запятую, например: помидор, сыр, яйцо", h.withBack(h.mainMenuKeyboard()), nil)
+		}
 		matches, err := h.botService.Match(ctx, ingredients)
 		_ = h.store.Set(userID, UserStateIdle, "", st.Token)
 		if err != nil {
@@ -614,7 +625,6 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		return h.sendMatches(ctx, chatID, userID, matches, nil)
 
 	default:
-		// Старые сохранённые сессии: одношаговая форма регистрации больше не используется.
 		if st.State == UserState("awaiting_register_form") {
 			sess := h.store.GetOrCreate(userID)
 			sess.AuthFlow = "register"
@@ -696,10 +706,8 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 	st := h.store.GetCopy(userID)
 	token := st.Token
 
-	// REQUIRED: strict routing by callback prefix.
 	switch {
 	case strings.HasPrefix(data, "nav:"):
-		// Any nav action resets FSM to idle first (without losing token/session).
 		_ = h.store.SetState(userID, UserStateIdle)
 		sess := h.store.GetOrCreate(userID)
 
@@ -745,7 +753,6 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			sess.AuthFlow = ""
 			sess.Name = ""
 			_ = h.store.Save()
-			// Set awaiting ingredients after nav reset.
 			_ = h.store.Set(userID, UserStateAwaitingIngr, "", token)
 			return h.present(ctx, chatID, userID, "📷 Пришлите фото продуктов\nили\n✏️ напишите список через запятую (например: помидор, сыр, яйцо)", h.withBack(h.mainMenuKeyboard()), panel)
 
@@ -764,7 +771,6 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			return h.renderProfileCard(ctx, chatID, userID, token, panel)
 
 		case "login":
-			// Start LOGIN: email -> password.
 			sess.AuthFlow = "login"
 			sess.Name = ""
 			_ = h.store.Save()
@@ -857,19 +863,28 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 		b.WriteString(fmt.Sprintf("⏱ %d мин · 📂 %s", recipe.CookingTime, localizeCategory(recipe.Category)))
 
 		if desc := strings.TrimSpace(recipe.Description); desc != "" {
-			b.WriteString("\n\n")
-			if recipeDescriptionLooksEnglish(desc) {
-				b.WriteString("📝 Суть блюда: сбалансированный вкус и простая подача — идеально для домашнего стола ✨")
-			} else {
-				b.WriteString("📝 ")
-				b.WriteString(desc)
+			b.WriteString("\n\n📝 ")
+			b.WriteString(localizedRecipeDescription(recipe.Title, desc))
+		}
+
+		if len(recipe.Ingredients) > 0 {
+			b.WriteString("\n\n🥕 Ингредиенты:\n")
+			for _, ing := range recipe.Ingredients {
+				ing = strings.TrimSpace(ing)
+				if ing == "" {
+					continue
+				}
+				b.WriteString("· ")
+				b.WriteString(localizeIngredientDisplayName(ing))
+				b.WriteString("\n")
 			}
 		}
 
-		if len(recipe.Steps) > 0 {
-			b.WriteString("\n\n👩‍🍳 Как готовить:\n\n")
+		stepsRu := localizedRecipeSteps(recipe.Title, recipe.Steps)
+		if len(stepsRu) > 0 {
+			b.WriteString("\n👩‍🍳 Как готовить:\n\n")
 			stepNo := 0
-			for _, s := range recipe.Steps {
+			for _, s := range stepsRu {
 				s = strings.TrimSpace(s)
 				if s == "" {
 					continue
@@ -880,7 +895,24 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 		} else {
 			b.WriteString("\n\n🥘 Способ приготовления: уточняется")
 		}
-		return h.present(ctx, chatID, userID, b.String(), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
+
+		favLabel := "❤️ В избранное"
+		if strings.TrimSpace(token) != "" {
+			if favs, err := h.botService.GetFavorites(ctx, token); err == nil {
+				for _, fr := range favs {
+					if fr.ID == id {
+						favLabel = "💔 Убрать из избранного"
+						break
+					}
+				}
+			}
+		}
+
+		detailKB := [][]tgInlineKeyboardButton{
+			{{Text: favLabel, CallbackData: fmt.Sprintf("fav:%d", id)}},
+		}
+		detailKB = append(detailKB, h.compactMenuRow())
+		return h.present(ctx, chatID, userID, b.String(), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: detailKB}), panel)
 
 	case strings.HasPrefix(data, "fav:"):
 		idStr := strings.TrimPrefix(data, "fav:")
@@ -894,7 +926,6 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			return h.answerCallbackQuery(ctx, cq.ID, "Нужно авторизоваться")
 		}
 
-		// Toggle делаем через conflict: AddFavorite -> conflict => RemoveFavorite.
 		if err := h.botService.AddFavorite(ctx, token, id); err != nil {
 			var be *client.BackendError
 			if errors.As(err, &be) && be.StatusCode == http.StatusConflict {
@@ -915,30 +946,11 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 func (h *TelegramHandler) renderRecipesPage(ctx context.Context, userID int64, chatID int64, page int, panel *tgCallbackQueryMsg) error {
 	const limit = 10
 
-	recipes, supported, err := h.botService.GetRecipesPaged(ctx, page, limit)
+	recipes, hasNext, err := h.botService.GetRecipesPaged(ctx, page, limit)
 	if err != nil {
 		return h.present(ctx, chatID, userID, "Не удалось загрузить рецепты. Проверьте связь и нажмите «📖 Рецепты» ещё раз 🙏", h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
 	}
 
-	// If backend doesn't support paging: show only first 10, no pagination buttons.
-	if !supported {
-		all, err := h.botService.GetRecipes(ctx)
-		if err != nil {
-			return h.present(ctx, chatID, userID, "Не удалось загрузить рецепты. Проверьте связь и попробуйте снова 🙏", h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
-		}
-		if len(all) > limit {
-			all = all[:limit]
-		}
-		sess := h.store.GetOrCreate(userID)
-		sess.ActiveNav = "recipes"
-		sess.RecipesLastPage = 0
-		sess.BackNav = "menu"
-		sess.BackPage = 0
-		_ = h.store.Save()
-		return h.renderRecipeListPage(ctx, chatID, "Рецепты", all, userID, panel)
-	}
-
-	// backend paging supported
 	sess := h.store.GetOrCreate(userID)
 	sess.ActiveNav = "recipes"
 	sess.RecipesLastPage = page
@@ -946,7 +958,7 @@ func (h *TelegramHandler) renderRecipesPage(ctx context.Context, userID int64, c
 	sess.BackPage = 0
 	_ = h.store.Save()
 
-	return h.renderRecipeListPageRecipesPaged(ctx, chatID, "Рецепты", recipes, page, len(recipes) == limit, userID, panel)
+	return h.renderRecipeListPageRecipesPaged(ctx, chatID, "Рецепты", recipes, page, hasNext, userID, panel)
 }
 
 func (h *TelegramHandler) renderFavoritesPage(ctx context.Context, userID int64, chatID int64, token string, panel *tgCallbackQueryMsg) error {
@@ -969,7 +981,6 @@ func (h *TelegramHandler) renderRecipeListPage(ctx context.Context, chatID int64
 		return h.present(ctx, chatID, userID, msg, h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
 	}
 
-	// Pagination callback formats are intentionally removed to comply with strict callback routing formats.
 	const maxShown = 10
 	slice := recipes
 	if len(slice) > maxShown {
@@ -1176,8 +1187,6 @@ func (h *TelegramHandler) downloadFile(ctx context.Context, filePath string) ([]
 	return io.ReadAll(resp.Body)
 }
 
-// present обновляет одно и то же сообщение бота: при callback — правка сообщения с кнопкой;
-// при вводе текста/фото — правка по сохранённому message_id, иначе первая отправка.
 func (h *TelegramHandler) present(ctx context.Context, chatID int64, userID int64, text string, kb *tgInlineKeyboardMarkup, panel *tgCallbackQueryMsg) error {
 	text = strings.TrimSpace(text)
 	if text == "" {

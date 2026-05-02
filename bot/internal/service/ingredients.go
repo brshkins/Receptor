@@ -5,8 +5,6 @@ import (
 	"unicode"
 )
 
-// Ingredient normalization & localization lives in the bot only.
-// Canonical names must match backend DB (see seeds/seed.go ingredientClassMap).
 
 var ingredientSynonymsToEN = map[string]string{
 	// tomato
@@ -28,7 +26,7 @@ var ingredientSynonymsToEN = map[string]string{
 	"яиц":          "eggs",
 	"egg":          "eggs",
 	"eggs":         "eggs",
-	// meat (chicken/beef/pork collapse to "meat" in seed)
+	// meat 
 	"курица":       "meat",
 	"куриное":      "meat",
 	"куриный":      "meat",
@@ -53,7 +51,7 @@ var ingredientSynonymsToEN = map[string]string{
 	// flour
 	"мука":         "flour",
 	"flour":        "flour",
-	// cooking oil → olive oil (matches seeded recipes)
+	// cooking oil → olive oil 
 	"масло":           "olive oil",
 	"растительное":    "olive oil",
 	"oil":             "olive oil",
@@ -188,7 +186,8 @@ var ingredientENToRU = map[string]string{
 	"water":      "вода",
 }
 
-func normalizeIngredientsForBackend(in []string) []string {
+// NormalizeIngredientsForBackend переводит RU/EN синонимы в токены, которые ждёт API (как во frontend matchService).
+func NormalizeIngredientsForBackend(in []string) []string {
 	if len(in) == 0 {
 		return nil
 	}
@@ -196,9 +195,8 @@ func normalizeIngredientsForBackend(in []string) []string {
 	seen := make(map[string]struct{}, len(in))
 	for _, raw := range in {
 		w := strings.ToLower(strings.TrimSpace(raw))
-		// basic normalization: trim punctuation and normalize 'ё' => 'е'
 		w = strings.ReplaceAll(w, "ё", "е")
-		w = strings.Trim(w, " \t\r\n,.;:")
+		w = strings.Trim(w, " \t\r\n,.;:!?-–—")
 		if w == "" {
 			continue
 		}
@@ -215,6 +213,22 @@ func normalizeIngredientsForBackend(in []string) []string {
 		return nil
 	}
 	return out
+}
+
+// HasIngredientKeyword — хотя бы один токен из словаря ингредиентов (для безопасного автоподбора из idle).
+func HasIngredientKeyword(tokens []string) bool {
+	for _, raw := range tokens {
+		w := strings.ToLower(strings.TrimSpace(raw))
+		w = strings.ReplaceAll(w, "ё", "е")
+		w = strings.Trim(w, " \t\r\n,.;:!?-–—")
+		if w == "" {
+			continue
+		}
+		if _, ok := ingredientSynonymsToEN[w]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func localizeIngredientENToRU(s string) string {

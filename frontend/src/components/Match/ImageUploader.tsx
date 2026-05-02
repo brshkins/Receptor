@@ -1,12 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { uploadService } from '../../services/uploadService';
+import type { MatchResponse } from '../../types';
 import styles from './Match.module.css';
 
 interface ImageUploaderProps {
-  onUploadSuccess: (matches: any[]) => void;
+  onUploadSuccess: (items: MatchResponse[]) => void;
+  /** При ошибке не вызывать onUploadSuccess; показать сообщение без «пустого» успеха. */
+  onUploadError?: (message: string) => void;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ onUploadSuccess }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({
+  onUploadSuccess,
+  onUploadError,
+}) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,14 +31,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onUploadSuccess })
       setTimeout(() => setAiStatus('🔍 Распознаём ингредиенты...'), 1000);
       setTimeout(() => setAiStatus('📚 Подбираем рецепты...'), 2000);
       
-      const result = await uploadService.uploadAndMatch(file);
-      // Исправление: проверяем, есть ли matches
-      onUploadSuccess(result.matches || []);
+      const items = await uploadService.uploadAndMatch(file);
+      onUploadSuccess(items);
     } catch (error) {
       console.error('Upload failed:', error);
       setAiStatus('');
-      // Показываем ошибку пользователю
-      alert('Не удалось загрузить фото. Попробуйте ещё раз.');
+      const msg = 'Не удалось загрузить фото. Попробуйте ещё раз.';
+      if (onUploadError) {
+        onUploadError(msg);
+      } else {
+        alert(msg);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -107,7 +116,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onUploadSuccess })
       
       {preview && !isUploading && (
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <img src={preview} alt="Preview" className={styles.previewImage} />
+          <img src={preview} alt="Предпросмотр" className={styles.previewImage} />
         </div>
       )}
     </div>

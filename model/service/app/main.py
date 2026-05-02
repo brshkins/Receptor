@@ -18,7 +18,8 @@ def create_app() -> FastAPI:
     def _startup() -> None:
         model_path = get_model_path_from_env()
         detector = YoloDetector(model_path=model_path)
-        app.state.detection_service = DetectionService(detector=detector, conf_threshold=0.1)
+        # Ниже порог — чаще ловим объект на одном фото (помидор/апельсин и т.д.).
+        app.state.detection_service = DetectionService(detector=detector, conf_threshold=0.05)
         logger.info("YOLO model loaded")
 
     @app.exception_handler(ModelLoadError)

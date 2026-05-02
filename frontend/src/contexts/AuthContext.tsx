@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface User {
   id: number | string;
@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch (error) {
           console.error('Failed to get user:', error);
           localStorage.removeItem('token');
+          setUser(null);
         }
       }
       setIsLoading(false);
@@ -42,33 +43,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await authService.login({ email, password });
-  
-    if (response.user) {
-      setUser(response.user);
-    } else {
-    // Если пользователь не пришел, запрашиваем отдельно
-      try {
-        const userData = await authService.getMe();
-        setUser(userData);
-      } catch {
-        setUser({ id: 0, name: email.split('@')[0], email });
-      }
+    await authService.login({ email, password });
+    try {
+      const userData = await authService.getMe();
+      setUser(userData);
+    } catch (error) {
+      authService.logout();
+      setUser(null);
+      const msg = getApiErrorMessage(
+        error,
+        error instanceof Error ? error.message : 'Не удалось загрузить профиль'
+      );
+      throw new Error(msg);
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await authService.register({ name, email, password });
-  
-    if (response.user) {
-      setUser(response.user);
-    } else {
-      try {
-        const userData = await authService.getMe();
-        setUser(userData);
-      } catch {
-       setUser({ id: 0, name, email });
-      }
+    await authService.register({ name, email, password });
+    try {
+      const userData = await authService.getMe();
+      setUser(userData);
+    } catch (error) {
+      authService.logout();
+      setUser(null);
+      const msg = getApiErrorMessage(
+        error,
+        error instanceof Error ? error.message : 'Не удалось загрузить профиль'
+      );
+      throw new Error(msg);
     }
   };
 

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiErrorMessage } from '../utils/apiError';
 import styles from './Pages.module.css';
 
 const AuthPage: React.FC = () => {
@@ -39,9 +40,9 @@ const AuthPage: React.FC = () => {
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Введите email';
+      newErrors.email = 'Укажите эл. почту';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Некорректный email';
+      newErrors.email = 'Некорректный адрес почты';
     }
     
     if (!formData.password) {
@@ -72,9 +73,8 @@ const AuthPage: React.FC = () => {
         await register(formData.name, formData.email, formData.password);
       }
       navigate(from, { replace: true });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Произошла ошибка';
-      setErrors({ submit: errorMessage });
+    } catch (error: unknown) {
+      setErrors({ submit: getApiErrorMessage(error, 'Произошла ошибка') });
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +155,7 @@ const AuthPage: React.FC = () => {
           <div className={styles.inputGroup}>
             <label htmlFor="email" className={styles.inputLabel}>
               <span className={styles.labelIcon}>📧</span>
-              <span>Email</span>
+              <span>Эл. почта</span>
             </label>
             <div className={styles.inputWrapper}>
               <input
@@ -164,7 +164,7 @@ const AuthPage: React.FC = () => {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="your@email.com"
+                  placeholder="pochta@primer.ru"
                 className={`${styles.authInput} ${errors.email ? styles.inputError : ''}`}
                 disabled={isLoading}
               />

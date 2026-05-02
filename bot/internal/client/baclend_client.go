@@ -23,7 +23,6 @@ type BackendClient interface {
 	Me(ctx context.Context, token string) (*dto.User, error)
 
 	GetRecipes(ctx context.Context) ([]dto.RecipeResponse, error)
-	GetRecipesPage(ctx context.Context, page, limit int) ([]dto.RecipeResponse, error)
 	GetRecipeByID(ctx context.Context, id int64) (*dto.RecipeResponse, error)
 	GetRecipeDetails(ctx context.Context, id int64) (*dto.RecipeDetailsResponse, error)
 
@@ -239,53 +238,6 @@ func (c *backendClient) GetRecipes(ctx context.Context) ([]dto.RecipeResponse, e
 
 	endpoint := *c.baseURL
 	endpoint.Path = path.Join(endpoint.Path, "/recipes")
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("do request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<10))
-		return nil, parseBackendError(resp.StatusCode, b)
-	}
-
-	var payload struct {
-		Data []dto.RecipeResponse `json:"data"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
-	}
-	if payload.Data == nil {
-		return []dto.RecipeResponse{}, nil
-	}
-	return payload.Data, nil
-}
-
-func (c *backendClient) GetRecipesPage(ctx context.Context, page, limit int) ([]dto.RecipeResponse, error) {
-	if ctx == nil {
-		return nil, fmt.Errorf("ctx is nil")
-	}
-	if page < 0 {
-		return nil, fmt.Errorf("invalid page: %d", page)
-	}
-	if limit <= 0 {
-		return nil, fmt.Errorf("invalid limit: %d", limit)
-	}
-
-	endpoint := *c.baseURL
-	endpoint.Path = path.Join(endpoint.Path, "/recipes")
-	q := endpoint.Query()
-	q.Set("page", fmt.Sprintf("%d", page))
-	q.Set("limit", fmt.Sprintf("%d", limit))
-	endpoint.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {

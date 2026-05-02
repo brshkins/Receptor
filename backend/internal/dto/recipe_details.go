@@ -10,5 +10,6 @@ type RecipeDetailsResponse struct {
 	Category    string   `json:"category"`
 	Description string   `json:"description"`
 	Steps       []string `json:"steps"`
+	Ingredients []string `json:"ingredients"`
 }
 

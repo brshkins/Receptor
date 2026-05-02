@@ -1,9 +1,11 @@
 // src/pages/RecipeFinderPage.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { RecipeList } from '../components/Recipes/RecipeList';
+import { MatchRecipeList } from '../components/Recipes/MatchRecipeList';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { matchService } from '../services/matchService';
-import { Recipe } from '../types';
+import { uploadService } from '../services/uploadService';
+import type { MatchResponse } from '../types';
+import { getApiErrorMessage } from '../utils/apiError';
 import styles from './Pages.module.css';
 
 const RecipeFinderPage: React.FC = () => {
@@ -11,8 +13,15 @@ const RecipeFinderPage: React.FC = () => {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<MatchResponse[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const resetSearchResults = () => {
+    setHasSearched(false);
+    setSearchError(null);
+    setRecipes([]);
+  };
   
   // Для камеры
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -22,10 +31,20 @@ const RecipeFinderPage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /** Русские подписи = то, что уходит в API; нормализация на backend */
   const popularIngredients = [
-    'tomato', 'cheese', 'chicken', 'pasta', 
-    'onion', 'garlic', 'cream', 'egg',
-    'potato', 'carrot', 'rice', 'mushroom'
+    'помидоры',
+    'сыр',
+    'курица',
+    'паста',
+    'лук',
+    'чеснок',
+    'сметана',
+    'яйцо',
+    'картофель',
+    'морковь',
+    'рис',
+    'грибы',
   ];
 
   // ========== СЦЕНАРИЙ 1: РУЧНОЙ ВВОД ==========
@@ -50,17 +69,17 @@ const RecipeFinderPage: React.FC = () => {
 
   const handleFindByIngredients = async () => {
     if (ingredients.length === 0) return;
-  
+
+    setSearchError(null);
     setIsLoading(true);
     setHasSearched(true);
-  
+
     try {
-      const response = await matchService.matchByIngredients(ingredients);
-    // Извлекаем рецепты из MatchResult[]
-      const recipesList = (response.matches || []).map(match => match.recipe);
-      setRecipes(recipesList);
+      const recipes = await matchService.matchByIngredients(ingredients);
+      setRecipes(recipes);
     } catch (error) {
       console.error('Ошибка поиска:', error);
+      setSearchError(getApiErrorMessage(error, 'Не удалось выполнить подбор по ингредиентам'));
       setRecipes([]);
     } finally {
       setIsLoading(false);
@@ -182,53 +201,22 @@ const capturePhoto = () => {
   startCamera();
 };
 
-  const handleFindByImage = async () => {
-    if (capturedImages.length === 0) return;
-  
-    setIsLoading(true);
-    setHasSearched(true);
-  
-    try {
-      const img = capturedImages[0]; // Берём первое фото
-      const blob = await fetch(img).then(r => r.blob());
-      const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-    
-      const response = await matchService.matchByImage(file);
-    // Извлекаем рецепты из MatchResult[]
-      const recipesList = (response.matches || []).map(match => match.recipe);
-      setRecipes(recipesList);
-    } catch (error) {
-      console.error('Ошибка распознавания:', error);
-      setRecipes([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   const handleFindByImages = async () => {
     if (capturedImages.length === 0) return;
-    
+
+    setSearchError(null);
     setIsLoading(true);
     setHasSearched(true);
-    
-    try {
-      // Конвертируем все фото в файлы
-      const files = await Promise.all(
-        capturedImages.map(async (img, index) => {
-          const blob = await fetch(img).then(r => r.blob());
-          return new File([blob], `photo_${index}.jpg`, { type: 'image/jpeg' });
-        })
-      );
-      
-    // Отправляем на бэкенд (пока только первое фото)
-    const img = capturedImages[0];
-    const blob = await fetch(img).then(r => r.blob());
-    const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
 
-    const response = await matchService.matchByImage(file);
-    const recipesList = (response.matches || []).map((match: any) => match.recipe);
-    setRecipes(recipesList);
+    try {
+      const blobs = await Promise.all(
+        capturedImages.map((dataUrl) => fetch(dataUrl).then((r) => r.blob()))
+      );
+      const recipes = await uploadService.uploadAndMatch(blobs);
+      setRecipes(recipes);
     } catch (error) {
       console.error('Ошибка распознавания:', error);
+      setSearchError(getApiErrorMessage(error, 'Не удалось распознать фото или выполнить подбор'));
       setRecipes([]);
     } finally {
       setIsLoading(false);
@@ -237,8 +225,7 @@ const capturePhoto = () => {
 
   const handleTabChange = (tab: 'ingredients' | 'camera') => {
     setActiveTab(tab);
-    setHasSearched(false);
-    setRecipes([]);
+    resetSearchResults();
     if (tab === 'ingredients') {
       stopCamera();
       setCapturedImages([]);
@@ -298,7 +285,7 @@ const capturePhoto = () => {
                 value={currentIngredient}
                 onChange={(e) => setCurrentIngredient(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddIngredient()}
-                placeholder="Например: tomato, cheese..."
+                placeholder="Например: помидоры, сыр, курица"
                 className={styles.input}
               />
               <button onClick={handleAddIngredient} className={styles.addButton}>
@@ -496,19 +483,25 @@ const capturePhoto = () => {
           <div className={styles.resultsPanel}>
             <div className={styles.resultsHeader}>
               <h3>🍽️ Найденные рецепты</h3>
-              <button className={styles.backButton} onClick={() => setHasSearched(false)}>
+              <button type="button" className={styles.backButton} onClick={resetSearchResults}>
                 ← Назад к поиску
               </button>
             </div>
-            
-            {recipes.length > 0 ? (
-              <RecipeList recipes={recipes} />
-            ) : (
+
+            {searchError ? (
+              <div className={styles.emptyState} role="alert">
+                <div className={styles.emptyIcon}>⚠️</div>
+                <h3>Ошибка загрузки</h3>
+                <p>{searchError}</p>
+              </div>
+            ) : recipes.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>😕</div>
                 <h3>Ничего не найдено</h3>
                 <p>Попробуйте другие ингредиенты или фото</p>
               </div>
+            ) : (
+              <MatchRecipeList items={recipes} />
             )}
           </div>
         )}

@@ -1,36 +1,69 @@
 import { apiClient } from './api';
+import type { MatchResponse } from '../types';
 
-export interface UploadResponse {
-  success: boolean;
-  fileUrl?: string;
-  matches?: Array<{
-    id: string;
-    title: string;
-    confidence: number;
-  }>;
-  message?: string;
+export async function normalizeImage(input: Blob | File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(input);
+
+    img.onload = async () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(img.naturalWidth || img.width, 256);
+      canvas.height = Math.max(img.naturalHeight || img.height, 256);
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas error'));
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const blob = await fetch(dataUrl).then((r) => r.blob());
+
+        if (!blob || blob.size === 0) {
+          return reject(new Error('Empty blob after normalization'));
+        }
+
+        const file = new File([blob], 'photo.jpg', {
+          type: 'image/jpeg',
+        });
+
+        console.log('FINAL FILE:', {
+          size: file.size,
+          type: file.type,
+        });
+
+        resolve(file);
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Invalid image'));
+    };
+
+    img.src = url;
+  });
 }
 
 export const uploadService = {
-  async uploadAndMatch(file: File): Promise<UploadResponse> {
+  normalizeImage,
+  /** Одно или несколько фото — бэкенд склеивает список ингредиентов и один раз матчит рецепты. */
+  async uploadAndMatch(input: File | Blob | Array<File | Blob>): Promise<MatchResponse[]> {
+    const list = Array.isArray(input) ? input : [input];
+    const normalized = await Promise.all(list.map((x) => normalizeImage(x)));
+
     const formData = new FormData();
-    formData.append('image', file);
+    // Одно имя поля `file` несколько раз — так стабильнее парсится в Go (multipart.File["file"]).
+    for (const f of normalized) {
+      formData.append('file', f, f.name);
+    }
 
-    return apiClient.post<UploadResponse>('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-  },
-
-  async uploadImage(file: File): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    return apiClient.post<{ url: string }>('/upload/image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const data = await apiClient.post<unknown>('/upload', formData);
+    return Array.isArray(data) ? (data as MatchResponse[]) : [];
   },
 };

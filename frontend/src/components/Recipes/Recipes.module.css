@@ -663,3 +663,10 @@
 .metaIcon {
   font-size: 0.95rem;
 }
+
+.matchMissing {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: #8B6F5E;
+  line-height: 1.45;
+}

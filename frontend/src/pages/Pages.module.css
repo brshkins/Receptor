@@ -2245,6 +2245,15 @@
   justify-content: center;
 }
 
+.detailHeroImage {
+  width: 200px;
+  height: 200px;
+  min-width: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--orange-light);
+}
+
 .detailEmoji {
   font-size: 80px;
 }

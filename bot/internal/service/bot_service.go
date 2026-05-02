@@ -15,9 +15,8 @@ type BotService interface {
 	Me(ctx context.Context, token string) (*dto.User, error)
 
 	GetRecipes(ctx context.Context) ([]dto.RecipeResponse, error)
-	// GetRecipesPaged returns a page if backend supports paging.
-	// supported=false means "fallback to first 10, no pagination".
-	GetRecipesPaged(ctx context.Context, page, limit int) (recipes []dto.RecipeResponse, supported bool, err error)
+	// GetRecipesPaged загружает полный список с API и отдаёт срез для отображения в Telegram (бэкенд без offset/limit).
+	GetRecipesPaged(ctx context.Context, page, limit int) (recipes []dto.RecipeResponse, hasNext bool, err error)
 	GetRecipeByID(ctx context.Context, id int64) (*dto.RecipeResponse, error)
 	GetRecipeDetails(ctx context.Context, id int64) (*dto.RecipeDetailsResponse, error)
 
@@ -72,16 +71,27 @@ func (s *botService) GetRecipes(ctx context.Context) ([]dto.RecipeResponse, erro
 }
 
 func (s *botService) GetRecipesPaged(ctx context.Context, page, limit int) ([]dto.RecipeResponse, bool, error) {
-	// Optimistic attempt: if backend doesn't support paging, fall back client-side.
-	rec, err := s.backend.GetRecipesPage(ctx, page, limit)
+	all, err := s.backend.GetRecipes(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	// If backend ignores paging params, it will likely return more than limit.
-	if len(rec) > limit {
-		return rec, false, nil
+	if page < 0 {
+		page = 0
 	}
-	return rec, true, nil
+	if limit <= 0 {
+		limit = 10
+	}
+	start := page * limit
+	if start >= len(all) {
+		return []dto.RecipeResponse{}, false, nil
+	}
+	end := start + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	slice := append([]dto.RecipeResponse(nil), all[start:end]...)
+	hasNext := end < len(all)
+	return slice, hasNext, nil
 }
 
 func (s *botService) GetRecipeByID(ctx context.Context, id int64) (*dto.RecipeResponse, error) {
@@ -105,35 +115,10 @@ func (s *botService) RemoveFavorite(ctx context.Context, token string, recipeID 
 }
 
 func (s *botService) Match(ctx context.Context, ingredients []string) ([]dto.MatchResponse, error) {
-	normalized := normalizeIngredientsForBackend(ingredients)
-	matches, err := s.backend.Match(ctx, normalized)
-	if err != nil {
-		return nil, err
-	}
-	for i := range matches {
-		if len(matches[i].MissingIngredients) == 0 {
-			continue
-		}
-		for j := range matches[i].MissingIngredients {
-			matches[i].MissingIngredients[j] = localizeIngredientENToRU(matches[i].MissingIngredients[j])
-		}
-	}
-	return matches, nil
+	return s.backend.Match(ctx, ingredients)
 }
 
 func (s *botService) UploadImage(ctx context.Context, image []byte) ([]dto.MatchResponse, error) {
-	matches, err := s.backend.UploadImage(ctx, image)
-	if err != nil {
-		return nil, err
-	}
-	for i := range matches {
-		if len(matches[i].MissingIngredients) == 0 {
-			continue
-		}
-		for j := range matches[i].MissingIngredients {
-			matches[i].MissingIngredients[j] = localizeIngredientENToRU(matches[i].MissingIngredients[j])
-		}
-	}
-	return matches, nil
+	return s.backend.UploadImage(ctx, image)
 }
 

@@ -69,6 +69,33 @@ func (r *recipesRepository) GetByID(ctx context.Context, id int64) (*model.Recip
 	return &rec, nil
 }
 
+func (r *recipesRepository) GetIngredientNamesByRecipeID(ctx context.Context, recipeID int64) ([]string, error) {
+	const q = `
+		SELECT i.name
+		FROM recipe_ingredients ri
+		INNER JOIN ingredients i ON i.id = ri.ingredient_id
+		WHERE ri.recipe_id = $1
+		ORDER BY ri.ingredient_id ASC`
+	rows, err := r.db.Query(ctx, q, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		out = append(out, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (r *recipesRepository) GetStepsByRecipeID(ctx context.Context, recipeID int64) ([]model.RecipeStep, error) {
 	const q = `
 		SELECT recipe_id, step_number, description

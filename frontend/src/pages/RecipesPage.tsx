@@ -7,52 +7,52 @@ import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { recipesService } from '../services/recipesService';
 import { favoritesService } from '../services/favoritesService';
 import { Recipe, RecipeFilters as FilterType } from '../types';
-import { translateCategory } from '../utils/translations';
+import { translateCategory, translateRecipeTitle } from '../utils/translations';
+import { getApiErrorMessage } from '../utils/apiError';
 import styles from './Pages.module.css';
 
 const RecipesPage: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterType>({ sort: 'asc', sortBy: 'name' });
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   const loadFavoriteIds = useCallback(async () => {
-  try {
-    const response = await favoritesService.getAll();
-    console.log('Ответ избранного:', response);
-    
-    // response может быть { data: [...] } или просто массивом
-    const favorites = Array.isArray(response) 
-      ? response 
-      : (response as any)?.data || [];
-    
-    if (Array.isArray(favorites)) {
-      const ids = new Set(favorites.map((f: any) => String(f.id || f.recipe_id)));
-      console.log('ID избранных:', Array.from(ids));
+    try {
+      const favorites = await favoritesService.getAll();
+      const ids = new Set(favorites.map((f) => String(f.id)));
       setFavoriteIds(ids);
       return ids;
+    } catch (error) {
+      console.error('Ошибка загрузки избранного:', error);
     }
-  } catch (error) {
-    console.error('Ошибка загрузки избранного:', error);
-  }
-  return new Set<string>();
-}, []);
+    return new Set<string>();
+  }, []);
 
   const loadRecipes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await recipesService.getAll({ search: searchTerm || undefined });
-
-      let recipesList: Recipe[] = [];
-      if (Array.isArray(response)) recipesList = response;
-      else if (response && typeof response === 'object' && 'data' in response && Array.isArray((response as any).data)) {
-        recipesList = (response as any).data;
-      }
+      setLoadError(null);
+      // Полный список с бэкенда: поиск по названию только на EN в БД, пользователь вводит RU.
+      const recipesList = await recipesService.getAll();
 
       const favIds = await loadFavoriteIds();
-      let filtered = recipesList.map(r => ({ ...r, isFavorite: favIds.has(String(r.id)) }));
+      let filtered: Recipe[] = recipesList.map((r) => ({
+        ...r,
+        isFavorite: favIds.has(String(r.id)),
+      }));
+
+      const q = searchTerm.trim().toLowerCase();
+      if (q) {
+        filtered = filtered.filter((r) => {
+          const titleRu = translateRecipeTitle(r.title).toLowerCase();
+          const titleEn = (r.title ?? '').toLowerCase();
+          return titleRu.includes(q) || titleEn.includes(q);
+        });
+      }
 
       if (filters.category) filtered = filtered.filter(r => r.category === filters.category);
 
@@ -73,8 +73,10 @@ const RecipesPage: React.FC = () => {
       }
 
       setRecipes(filtered);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load recipes:', error);
+      const message = error instanceof Error ? error.message : 'Не удалось загрузить рецепты';
+      setLoadError(getApiErrorMessage(error, message));
       setRecipes([]);
     } finally { setLoading(false); }
   }, [searchTerm, filters, loadFavoriteIds]);
@@ -105,7 +107,9 @@ const RecipesPage: React.FC = () => {
 
   const isFilterActive = filters.category !== undefined || filters.sort !== 'asc' || filters.sortBy !== 'name';
 
-  if (loading && recipes.length === 0) return <LoadingSpinner text="Загружаем рецепты..." />;
+  if (loading && recipes.length === 0 && !loadError) {
+    return <LoadingSpinner text="Загружаем рецепты..." />;
+  }
 
   return (
     <div className={styles.pageContainer}>
@@ -117,15 +121,29 @@ const RecipesPage: React.FC = () => {
         <SearchBar onSearch={handleSearch} onFilterClick={() => setIsFilterOpen(true)} placeholder="Поиск по названию..." initialValue={searchTerm} isFilterActive={isFilterActive} />
       </div>
       <FilterPanel filters={filters} onFilterChange={handleFilterChange} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
-      {loading ? <LoadingSpinner text="Обновляем..." /> : (
-        recipes.length > 0 ? (
-          <>
-            <p className={styles.resultsCount}>Найдено рецептов: {recipes.length}</p>
-            <RecipeList recipes={recipes} onFavoriteToggle={handleFavoriteToggle} />
-          </>
-        ) : (
-          <div className={styles.emptyState}><div className={styles.emptyIcon}>🔍</div><h3 className={styles.emptyTitle}>Рецепты не найдены</h3><p className={styles.emptyText}>Попробуйте изменить параметры поиска или фильтры</p></div>
-        )
+
+      {loadError ? (
+        <div className={styles.emptyState} role="alert">
+          <div className={styles.emptyIcon}>⚠️</div>
+          <h3 className={styles.emptyTitle}>Не удалось загрузить рецепты</h3>
+          <p className={styles.emptyText}>{loadError}</p>
+          <button type="button" className={styles.backButtonBig} onClick={() => loadRecipes()}>
+            Повторить
+          </button>
+        </div>
+      ) : loading ? (
+        <LoadingSpinner text="Обновляем..." />
+      ) : recipes.length > 0 ? (
+        <>
+          <p className={styles.resultsCount}>Найдено рецептов: {recipes.length}</p>
+          <RecipeList recipes={recipes} onFavoriteToggle={handleFavoriteToggle} />
+        </>
+      ) : (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>🔍</div>
+          <h3 className={styles.emptyTitle}>Рецепты не найдены</h3>
+          <p className={styles.emptyText}>Попробуйте изменить параметры поиска или фильтры</p>
+        </div>
       )}
     </div>
   );

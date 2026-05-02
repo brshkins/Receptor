@@ -1,40 +1,23 @@
-import { apiClient } from './api';
-
-export interface Recipe {
-  id: string;
-  title: string;
-  description: string;
-  ingredients: any[];
-  instructions: string[];
-  cookingTime: number;
-  difficulty: string;
-  imageUrl?: string;
-}
-
-export interface MatchResult {
-  recipe: Recipe;
-  matchScore: number;
-  matchedIngredients: string[];
-}
-
-export interface MatchResponse {
-  matches: MatchResult[];
-  totalCount: number;
-}
+import { apiClient, unwrap } from './api';
+import type { MatchResponse } from '../types';
+import { normalizeIngredient } from '../utils/matchIngredientNormalize';
 
 export const matchService = {
-  async matchByIngredients(ingredients: string[]): Promise<MatchResponse> {
-    return apiClient.post<MatchResponse>('/match/by-ingredients', { ingredients });
-  },
+  async matchByIngredients(ingredients: string[]): Promise<MatchResponse[]> {
+    console.log('INGREDIENTS BEFORE:', ingredients);
+    const normalized = ingredients
+      .flatMap((raw) => {
+        const v = normalizeIngredient(raw);
+        if (v === '') return [];
+        return Array.isArray(v) ? v : [v];
+      })
+      .filter(Boolean);
+    console.log('INGREDIENTS AFTER:', normalized);
 
-  async matchByImage(imageFile: File): Promise<MatchResponse> {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    
-    return apiClient.post<MatchResponse>('/match/by-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const response = await apiClient.rawPost('/match/by-ingredients', {
+      ingredients: normalized,
     });
+    const data = unwrap(response);
+    return Array.isArray(data) ? (data as MatchResponse[]) : [];
   },
 };
