@@ -47,11 +47,14 @@ func main() {
 	recipeSvc := service.NewRecipeService(recipesRepo)
 	favoriteSvc := service.NewFavoriteService(favoritesRepo)
 	matchSvc := service.NewMatchService(pool, ingredientsRepo)
+	mlClient := service.NewHTTPMLClient(cfg.MLURL)
+	uploadSvc := service.NewUploadService(mlClient, matchSvc)
 
 	authH := handler.NewAuthHandler(authSvc)
 	recipeH := handler.NewRecipeHandler(recipeSvc)
 	favoriteH := handler.NewFavoriteHandler(favoriteSvc)
 	matchH := handler.NewMatchHandler(matchSvc)
+	uploadH := handler.NewUploadHandler(uploadSvc)
 
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -70,6 +73,7 @@ func main() {
 	r.GET("/auth/me", middleware.JWT(cfg.JWTSecret), authH.Me)
 
 	r.GET("/recipes", recipeH.List)
+	r.GET("/recipes/:id/details", recipeH.GetDetails)
 	r.GET("/recipes/:id", recipeH.GetByID)
 
 	fav := r.Group("/favorites", middleware.JWT(cfg.JWTSecret))
@@ -80,6 +84,7 @@ func main() {
 	}
 
 	r.POST("/match/by-ingredients", matchH.Match)
+	r.POST("/upload", uploadH.Upload)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,

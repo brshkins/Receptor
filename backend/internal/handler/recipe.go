@@ -77,3 +77,18 @@ func (h *RecipeHandler) GetByID(c *gin.Context) {
 	}
 	JSONOK(c, out)
 }
+
+// Получение детальной карточки рецепта (описание и шаги).
+func (h *RecipeHandler) GetDetails(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		JSONError(c, http.StatusBadRequest, "invalid id")
+		return
+	}
+	out, err := h.svc.GetDetails(c.Request.Context(), id)
+	if err != nil {
+		RespondError(c, err)
+		return
+	}
+	JSONOK(c, out)
+}

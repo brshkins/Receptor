@@ -24,6 +24,26 @@ func RespondError(c *gin.Context, err error) {
 	case errors.As(err, &pgErr) && pgErr.Code == "23505":
 		JSONError(c, http.StatusConflict, "conflict")
 	default:
+		var mlErr *service.MLServiceError
+		if errors.As(err, &mlErr) {
+			code := http.StatusBadGateway
+			switch mlErr.UpstreamStatus {
+			case http.StatusBadRequest, http.StatusUnprocessableEntity:
+				code = http.StatusBadRequest
+			case http.StatusNotFound:
+				code = http.StatusNotFound
+			case http.StatusServiceUnavailable:
+				code = http.StatusServiceUnavailable
+			default:
+				if mlErr.UpstreamStatus >= 500 {
+					code = http.StatusBadGateway
+				} else if mlErr.UpstreamStatus >= 400 {
+					code = http.StatusBadRequest
+				}
+			}
+			JSONError(c, code, mlErr.Error())
+			return
+		}
 		JSONError(c, http.StatusInternalServerError, "internal server error")
 	}
 }

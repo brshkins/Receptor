@@ -18,6 +18,7 @@ type UsersRepository interface {
 type RecipesRepository interface {
 	GetAll(ctx context.Context, filter dto.RecipeFilter) ([]*model.Recipe, error)
 	GetByID(ctx context.Context, id int64) (*model.Recipe, error)
+	GetStepsByRecipeID(ctx context.Context, recipeID int64) ([]model.RecipeStep, error)
 }
 
 // Контракт доступа к ингредиентам.

@@ -6,6 +6,11 @@ import (
 	"receptor/backend/internal/dto"
 )
 
+// ML клиент для распознавания ингредиентов по изображению.
+type MLClient interface {
+	DetectIngredients(ctx context.Context, image []byte) ([]string, error)
+}
+
 // Регистрация, вход, текущий пользователь.
 type AuthService interface {
 	Register(ctx context.Context, in dto.RegisterInput) (*dto.AuthResponse, error)
@@ -17,6 +22,7 @@ type AuthService interface {
 type RecipeService interface {
 	GetAll(ctx context.Context, filter dto.RecipeFilter) ([]dto.RecipeResponse, error)
 	GetByID(ctx context.Context, id int64) (*dto.RecipeResponse, error)
+	GetDetails(ctx context.Context, id int64) (*dto.RecipeDetailsResponse, error)
 }
 
 // Избранное.
@@ -29,4 +35,9 @@ type FavoriteService interface {
 // Подбор рецептов по ингредиентам.
 type MatchService interface {
 	Match(ctx context.Context, req *dto.MatchRequest) ([]dto.MatchResponse, error)
+}
+
+// Загрузка изображения, распознавание ингредиентов и подбор рецептов.
+type UploadService interface {
+	UploadAndMatch(ctx context.Context, image []byte) ([]dto.MatchResponse, error)
 }

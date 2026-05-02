@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -25,7 +24,7 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 		return []dto.MatchResponse{}, nil
 	}
 
-	normalized := normalizeIngredientNames(req.Ingredients)
+	normalized := normalizeMatchIngredientNames(req.Ingredients)
 	if len(normalized) == 0 {
 		return []dto.MatchResponse{}, nil
 	}
@@ -127,19 +126,3 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 	return out, nil
 }
 
-func normalizeIngredientNames(in []string) []string {
-	seen := make(map[string]struct{})
-	var out []string
-	for _, s := range in {
-		s = strings.ToLower(strings.TrimSpace(s))
-		if s == "" {
-			continue
-		}
-		if _, ok := seen[s]; ok {
-			continue
-		}
-		seen[s] = struct{}{}
-		out = append(out, s)
-	}
-	return out
-}

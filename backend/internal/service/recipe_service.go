@@ -37,6 +37,30 @@ func (s *recipeService) GetByID(ctx context.Context, id int64) (*dto.RecipeRespo
 	return &resp, nil
 }
 
+func (s *recipeService) GetDetails(ctx context.Context, id int64) (*dto.RecipeDetailsResponse, error) {
+	r, err := s.recipes.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	steps, err := s.recipes.GetStepsByRecipeID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	outSteps := make([]string, 0, len(steps))
+	for _, st := range steps {
+		outSteps = append(outSteps, st.Description)
+	}
+	return &dto.RecipeDetailsResponse{
+		ID:          r.ID,
+		Title:       r.Title,
+		Image:       r.ImageURL,
+		CookingTime: r.CookingTime,
+		Category:    r.Category,
+		Description: r.Description,
+		Steps:       outSteps,
+	}, nil
+}
+
 func recipeModelToResponse(r *model.Recipe) dto.RecipeResponse {
 	return dto.RecipeResponse{
 		ID:          r.ID,
