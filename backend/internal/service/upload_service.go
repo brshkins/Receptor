@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"receptor/backend/internal/dto"
@@ -27,6 +28,7 @@ func (s *uploadService) UploadAndMatch(ctx context.Context, images [][]byte) ([]
 			return nil, err
 		}
 		ingredients = append(ingredients, detected...)
+		log.Println("ML INGREDIENTS:", ingredients)
 	}
 	ingredients = demoteAppleToPastaWhenGrocerySet(ingredients)
 	return s.match.Match(ctx, &dto.MatchRequest{Ingredients: ingredients})

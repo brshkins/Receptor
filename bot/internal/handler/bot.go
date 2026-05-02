@@ -50,6 +50,9 @@ type UserSession struct {
 	BackNav         string 
 	BackPage        int
 
+	MatchResults  []dto.MatchResponse `json:"match_results,omitempty"`
+	MatchLastPage int                 `json:"match_last_page,omitempty"`
+
 	PanelChatID    int64 `json:"panel_chat_id,omitempty"`
 	PanelMessageID int   `json:"panel_message_id,omitempty"`
 }
@@ -269,24 +272,64 @@ func parseIngredients(s string) []string {
 	return out
 }
 
+const matchResultsPerPage = 5
+
 func (h *TelegramHandler) sendMatches(ctx context.Context, chatID int64, userID int64, matches []dto.MatchResponse, panel *tgCallbackQueryMsg) error {
 	if len(matches) == 0 {
+		sess := h.store.GetOrCreate(userID)
+		sess.MatchResults = nil
+		sess.MatchLastPage = 0
+		_ = h.store.Save()
 		return h.present(ctx, chatID, userID, "😔 Пока нет рецептов под ваш набор продуктов.\n\nПопробуйте другие ингредиенты или фото получше 📷", h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
 	}
 
+	sess := h.store.GetOrCreate(userID)
+	sess.MatchResults = matches
+	sess.MatchLastPage = 0
+	sess.ActiveNav = "match"
+	_ = h.store.Save()
+	return h.renderMatchesPage(ctx, chatID, userID, 0, panel)
+}
+
+func (h *TelegramHandler) renderMatchesPage(ctx context.Context, chatID int64, userID int64, page int, panel *tgCallbackQueryMsg) error {
+	sess := h.store.GetOrCreate(userID)
+	all := sess.MatchResults
+	if len(all) == 0 {
+		return h.present(ctx, chatID, userID, "Список подбора устарел — снова откройте «🔍 Подбор по продуктам» или отправьте продукты текстом.", h.withBack(h.mainMenuKeyboard()), panel)
+	}
+
+	perPage := matchResultsPerPage
+	totalPages := (len(all) + perPage - 1) / perPage
+	if page < 0 {
+		page = 0
+	}
+	if page >= totalPages {
+		page = totalPages - 1
+	}
+	start := page * perPage
+	end := start + perPage
+	if end > len(all) {
+		end = len(all)
+	}
+	shown := all[start:end]
+
+	sess.MatchLastPage = page
+	sess.ActiveNav = "match"
+	_ = h.store.Save()
+
 	const (
-		maxShownMatches   = 5
 		maxMissingToShow  = 4
 		maxIngredientsRow = 14
 	)
 
-	shown := matches
-	if len(shown) > maxShownMatches {
-		shown = shown[:maxShownMatches]
-	}
-
 	var b strings.Builder
-	rows := make([][]tgInlineKeyboardButton, 0, len(shown)+4)
+	b.WriteString("🔍 Подбор по продуктам")
+	if totalPages > 1 {
+		b.WriteString(fmt.Sprintf(" · стр. %d из %d", page+1, totalPages))
+	}
+	b.WriteString("\n\n")
+
+	rows := make([][]tgInlineKeyboardButton, 0, len(shown)+6)
 	for i, m := range shown {
 		if i > 0 {
 			b.WriteString("\n\n")
@@ -342,9 +385,17 @@ func (h *TelegramHandler) sendMatches(ctx context.Context, chatID int64, userID 
 		})
 	}
 
-	if remain := len(matches) - len(shown); remain > 0 {
-		b.WriteString("\n\n")
-		b.WriteString(fmt.Sprintf("… и ещё вариантов: %d", remain))
+	if totalPages > 1 {
+		navRow := make([]tgInlineKeyboardButton, 0, 2)
+		if page > 0 {
+			navRow = append(navRow, tgInlineKeyboardButton{Text: "⬅️ Назад", CallbackData: "nav:match_prev"})
+		}
+		if page+1 < totalPages {
+			navRow = append(navRow, tgInlineKeyboardButton{Text: "➡️ Далее", CallbackData: "nav:match_next"})
+		}
+		if len(navRow) > 0 {
+			rows = append(rows, navRow)
+		}
 	}
 
 	rows = append(rows, h.compactMenuRow())
@@ -752,6 +803,8 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			sess.BackPage = 0
 			sess.AuthFlow = ""
 			sess.Name = ""
+			sess.MatchResults = nil
+			sess.MatchLastPage = 0
 			_ = h.store.Save()
 			_ = h.store.Set(userID, UserStateAwaitingIngr, "", token)
 			return h.present(ctx, chatID, userID, "📷 Пришлите фото продуктов\nили\n✏️ напишите список через запятую (например: помидор, сыр, яйцо)", h.withBack(h.mainMenuKeyboard()), panel)
@@ -795,6 +848,9 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 				}
 				return h.renderFavoritesPage(ctx, userID, chatID, token, panel)
 			case "match":
+				if len(sess.MatchResults) > 0 {
+					return h.renderMatchesPage(ctx, chatID, userID, sess.BackPage, panel)
+				}
 				_ = h.store.Set(userID, UserStateAwaitingIngr, "", token)
 				return h.present(ctx, chatID, userID, "📷 Пришлите фото продуктов\nили\n✏️ напишите список через запятую (например: помидор, сыр, яйцо)", h.withBack(h.mainMenuKeyboard()), panel)
 			case "profile":
@@ -823,6 +879,24 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			sess.BackPage = 0
 			_ = h.store.Save()
 			return h.renderRecipesPage(ctx, userID, chatID, prev, panel)
+		case "match_next":
+			next := sess.MatchLastPage + 1
+			perPage := matchResultsPerPage
+			totalPages := (len(sess.MatchResults) + perPage - 1) / perPage
+			if len(sess.MatchResults) == 0 || next >= totalPages {
+				return nil
+			}
+			sess.MatchLastPage = next
+			_ = h.store.Save()
+			return h.renderMatchesPage(ctx, chatID, userID, next, panel)
+		case "match_prev":
+			prev := sess.MatchLastPage - 1
+			if prev < 0 || len(sess.MatchResults) == 0 {
+				return nil
+			}
+			sess.MatchLastPage = prev
+			_ = h.store.Save()
+			return h.renderMatchesPage(ctx, chatID, userID, prev, panel)
 		default:
 			return nil
 		}
@@ -844,7 +918,7 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			sess.BackPage = sess.FavsLastPage
 		case "match":
 			sess.BackNav = "match"
-			sess.BackPage = 0
+			sess.BackPage = sess.MatchLastPage
 		default:
 			sess.BackNav = "menu"
 			sess.BackPage = 0

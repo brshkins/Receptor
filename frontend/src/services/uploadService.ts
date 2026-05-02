@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import { apiClient, unwrap } from './api';
 import type { MatchResponse } from '../types';
 
 export async function normalizeImage(input: Blob | File): Promise<File> {
@@ -30,11 +30,6 @@ export async function normalizeImage(input: Blob | File): Promise<File> {
           type: 'image/jpeg',
         });
 
-        console.log('FINAL FILE:', {
-          size: file.size,
-          type: file.type,
-        });
-
         resolve(file);
       } catch (e) {
         reject(e);
@@ -63,7 +58,8 @@ export const uploadService = {
       formData.append('file', f, f.name);
     }
 
-    const data = await apiClient.post<unknown>('/upload', formData);
+    const response = await apiClient.rawPost('/upload', formData);
+    const data = unwrap(response);
     return Array.isArray(data) ? (data as MatchResponse[]) : [];
   },
 };

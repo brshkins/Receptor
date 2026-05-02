@@ -21,6 +21,8 @@ func (r *ingredientsRepository) GetByNames(ctx context.Context, names []string) 
 		return []*model.Ingredient{}, nil
 	}
 
+	// Только точное совпадение (case-insensitive) по name и aliases.
+	// Подстрочный LIKE давал ложные матчи: например inp "car" → ingredient "carrot".
 	const q = `
 		SELECT DISTINCT i.id, i.name, COALESCE(i.aliases, ARRAY[]::text[])
 		FROM ingredients i
@@ -28,10 +30,7 @@ func (r *ingredientsRepository) GetByNames(ctx context.Context, names []string) 
 			SELECT 1
 			FROM unnest($1::text[]) AS q(inp)
 			WHERE TRIM(q.inp) <> ''
-			AND (
-				LOWER(TRIM(i.name)) LIKE '%' || LOWER(TRIM(q.inp)) || '%'
-				OR LOWER(TRIM(q.inp)) LIKE '%' || LOWER(TRIM(i.name)) || '%'
-			)
+			AND LOWER(TRIM(i.name)) = LOWER(TRIM(q.inp))
 		)
 		OR EXISTS (
 			SELECT 1
@@ -39,10 +38,7 @@ func (r *ingredientsRepository) GetByNames(ctx context.Context, names []string) 
 			     unnest($1::text[]) AS q(inp)
 			WHERE TRIM(q.inp) <> ''
 			AND TRIM(a.alias) <> ''
-			AND (
-				LOWER(TRIM(a.alias)) LIKE '%' || LOWER(TRIM(q.inp)) || '%'
-				OR LOWER(TRIM(q.inp)) LIKE '%' || LOWER(TRIM(a.alias)) || '%'
-			)
+			AND LOWER(TRIM(a.alias)) = LOWER(TRIM(q.inp))
 		)`
 
 	rows, err := r.db.Query(ctx, q, names)
