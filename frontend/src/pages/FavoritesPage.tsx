@@ -1,76 +1,54 @@
 // src/pages/FavoritesPage.tsx
-import React, { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { favoritesService } from '../services/favoritesService';
-import { recipesService } from '../services/recipesService';
+import React, { useEffect, useState } from 'react';
 import { RecipeList } from '../components/Recipes/RecipeList';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
+import { favoritesService } from '../services/favoritesService';
 import { Recipe } from '../types';
 import styles from './Pages.module.css';
 
 const FavoritesPage: React.FC = () => {
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState<Recipe[]>([]);
 
-  const load = useCallback(async () => {
-    if (!isAuthenticated) {
-      setFavorites([]);
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
     try {
       setLoading(true);
-      const data = await favoritesService.list();
-      if (Array.isArray(data) && (data.length === 0 || typeof data[0] === 'number')) {
-        const ids = data as number[];
-        const recipes = await Promise.all(ids.map((id) => recipesService.getById(String(id))));
-        setFavorites(recipes.map((r) => ({ ...r, isFavorite: true })));
-      } else {
-        const recipes = data as Array<{
-          id: number;
-          title: string;
-          image: string;
-          cooking_time: number;
-          category: string;
-        }>;
-        setFavorites(recipes.map((r) => ({ ...r, isFavorite: true })));
-      }
+      const data = await favoritesService.getAll();
+      console.log('Избранное с бэкенда:', data);
+      
+      const favorites = Array.isArray(data) ? data : (data as any)?.data || [];
+      console.log('Массив избранного:', favorites);
+      
+      const recipesWithFavorite = favorites.map((r: any) => ({
+        ...r,
+        isFavorite: true
+      }));
+      
+      setRecipes(recipesWithFavorite);
+    } catch (error) {
+      console.error('Ошибка загрузки избранного:', error);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  };
 
-  useEffect(() => {
-    if (authLoading) return;
-    load();
-  }, [authLoading, load]);
-
-  const handleFavoriteToggle = async (id: number) => {
+  const handleFavoriteToggle = async (id: string) => {
+    setRecipes(prev => prev.filter(r => String(r.id) !== id));
     try {
       await favoritesService.remove(id);
-      setFavorites((prev) => prev.filter((r) => r.id !== id));
-    } catch (e) {
-      // ignore
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      loadFavorites();
     }
   };
 
-  if (authLoading) return <LoadingSpinner text="Загружаем..." />;
-  if (!isAuthenticated) {
-    return (
-      <div className={styles.pageContainer}>
-        <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>
-            <span className={styles.pageTitleEmoji}>❤️</span>
-            <span className={styles.pageTitleText}>Избранное</span>
-          </h1>
-          <p className={styles.pageDescription}>Войдите, чтобы увидеть избранные рецепты</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <LoadingSpinner text="Загружаем избранное..." />;
   }
-
-  if (loading) return <LoadingSpinner text="Загружаем избранное..." />;
 
   return (
     <div className={styles.pageContainer}>
@@ -84,11 +62,11 @@ const FavoritesPage: React.FC = () => {
         </p>
       </div>
 
-      {favorites.length > 0 ? (
-        <RecipeList recipes={favorites} onFavoriteToggle={handleFavoriteToggle} />
+      {recipes.length > 0 ? (
+        <RecipeList recipes={recipes} onFavoriteToggle={handleFavoriteToggle} />
       ) : (
         <div className={styles.emptyFavorites}>
-          <div className={styles.emptyIcon}>📖</div>
+          <div className={styles.emptyIcon}>❤️</div>
           <h3 className={styles.emptyTitle}>Пока пусто</h3>
           <p className={styles.emptyText}>
             Добавляйте рецепты в избранное, чтобы они всегда были под рукой

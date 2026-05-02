@@ -1,9 +1,9 @@
-// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
 }
@@ -43,16 +43,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     const response = await authService.login({ email, password });
-    localStorage.setItem('token', response.token);
-    const userData = await authService.getMe();
-    setUser(userData);
+  
+    if (response.user) {
+      setUser(response.user);
+    } else {
+    // Если пользователь не пришел, запрашиваем отдельно
+      try {
+        const userData = await authService.getMe();
+        setUser(userData);
+      } catch {
+        setUser({ id: 0, name: email.split('@')[0], email });
+      }
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await authService.register({ name, email, password });
-    localStorage.setItem('token', response.token);
-    const userData = await authService.getMe();
-    setUser(userData);
+  
+    if (response.user) {
+      setUser(response.user);
+    } else {
+      try {
+        const userData = await authService.getMe();
+        setUser(userData);
+      } catch {
+       setUser({ id: 0, name, email });
+      }
+    }
   };
 
   const logout = () => {
@@ -61,26 +78,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.location.href = '/';
   };
 
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!user,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      login,
+      register,
+      logout,
+      isAuthenticated: !!user,
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };

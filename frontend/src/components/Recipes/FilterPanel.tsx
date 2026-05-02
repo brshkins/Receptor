@@ -25,22 +25,22 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     }
   }, [isOpen, filters]);
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    setLocalFilters((prev) => ({ ...prev, category: value || undefined }));
-  };
-
-  const handleMaxTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    const value = raw === '' ? undefined : Number(raw);
-    setLocalFilters((prev) => ({
+  const handleDifficultyChange = (difficulty: FilterType['difficulty']) => {
+    setLocalFilters(prev => ({
       ...prev,
-      max_time: typeof value === 'number' && !Number.isNaN(value) ? value : undefined,
+      difficulty: prev.difficulty === difficulty ? undefined : difficulty
     }));
   };
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLocalFilters((prev) => ({ ...prev, sort: e.target.value as FilterType['sort'] }));
+  const handleSortChange = (sort: FilterType['sort']) => {
+    setLocalFilters(prev => ({ ...prev, sort }));
+  };
+
+  const handleSortByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLocalFilters(prev => ({ 
+      ...prev, 
+      sortBy: e.target.value as FilterType['sortBy']
+    }));
   };
 
   const handleApply = () => {
@@ -50,7 +50,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const handleReset = () => {
     const defaultFilters: FilterType = {
-      sort: 'alphabet_asc'
+      sort: 'asc',
+      sortBy: 'name'
     };
     setLocalFilters(defaultFilters);
   };
@@ -78,48 +79,168 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
         
         <div className={styles.filterContent}>
-          {/* Category */}
+          {/* Плашка с фильтрами сложности */}
+          // В filterContent добавь:
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
-              <span className={styles.labelIcon}>🏷️</span>
+              <span className={styles.labelIcon}>🍽️</span>
               <span>Категория</span>
             </div>
-            <input
-              className={styles.filterSelect}
-              value={localFilters.category || ''}
-              onChange={handleCategoryChange}
-              placeholder="Например: soup"
-            />
+            <div className={styles.chipGroup}>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${!localFilters.category ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: undefined };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                Все
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'pasta' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'pasta' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍝 Паста
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'meat' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'meat' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥩 Мясо
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'vegetarian' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'vegetarian' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥬 Вегетарианское
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'breakfast' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'breakfast' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍳 Завтрак
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'dessert' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'dessert' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍰 Десерт
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'soup' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'soup' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🍲 Суп
+              </button>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'salad' ? styles.chipActive : ''}`}
+                onClick={() => {
+                  const newFilters = { ...localFilters, category: 'salad' };
+                  setLocalFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+              >
+                🥗 Салат
+              </button>
+            </div>
           </div>
-
-          {/* Max time */}
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
-              <span className={styles.labelIcon}>⏱️</span>
-              <span>Макс. время (мин)</span>
+              <span className={styles.labelIcon}>📊</span>
+              <span>Сложность</span>
             </div>
-            <input
-              className={styles.filterSelect}
-              type="number"
-              min={0}
-              value={typeof localFilters.max_time === 'number' ? String(localFilters.max_time) : ''}
-              onChange={handleMaxTimeChange}
-              placeholder="Например: 30"
-            />
+            <div className={styles.chipGroup}>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'easy' ? styles.chipActive : ''}`}
+                onClick={() => handleDifficultyChange('easy')}
+              >
+                <span className={styles.chipIcon}>🥚</span>
+                <span className={styles.chipText}>Легко</span>
+              </button>
+              
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'medium' ? styles.chipActive : ''}`}
+                onClick={() => handleDifficultyChange('medium')}
+              >
+                <span className={styles.chipIcon}>👨‍🍳</span>
+                <span className={styles.chipText}>Средне</span>
+              </button>
+              
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.difficulty === 'hard' ? styles.chipActive : ''}`}
+                onClick={() => handleDifficultyChange('hard')}
+              >
+                <span className={styles.chipIcon}>🔥</span>
+                <span className={styles.chipText}>Сложно</span>
+              </button>
+            </div>
           </div>
 
-          {/* Sort */}
+          {/* Плашка с сортировкой */}
+          <div className={styles.filterChipContainer}>
+            <div className={styles.filterChipLabel}>
+              <span className={styles.labelIcon}>📝</span>
+              <span>Сортировка</span>
+            </div>
+            <select 
+              className={styles.filterSelect}
+              value={localFilters.sortBy} 
+              onChange={handleSortByChange}
+            >
+              <option value="name">По названию</option>
+              <option value="time">По времени</option>
+              <option value="difficulty">По сложности</option>
+            </select>
+          </div>
+
+          {/* Плашка с порядком сортировки */}
           <div className={styles.filterChipContainer}>
             <div className={styles.filterChipLabel}>
               <span className={styles.labelIcon}>🔄</span>
-              <span>Сортировка</span>
+              <span>Порядок</span>
             </div>
-            <select className={styles.filterSelect} value={localFilters.sort || 'alphabet_asc'} onChange={handleSortChange}>
-              <option value="alphabet_asc">Название (А→Я)</option>
-              <option value="alphabet_desc">Название (Я→А)</option>
-              <option value="time_asc">Время (по возрастанию)</option>
-              <option value="time_desc">Время (по убыванию)</option>
-            </select>
+            <div className={styles.chipGroup}>
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.sort === 'asc' ? styles.chipActive : ''}`}
+                onClick={() => handleSortChange('asc')}
+              >
+                <span className={styles.chipIcon}>🔼</span>
+                <span className={styles.chipText}>Возр.</span>
+              </button>
+              
+              <button 
+                className={`${styles.chip} ${styles.chipSmall} ${localFilters.sort === 'desc' ? styles.chipActive : ''}`}
+                onClick={() => handleSortChange('desc')}
+              >
+                <span className={styles.chipIcon}>🔽</span>
+                <span className={styles.chipText}>Убыв.</span>
+              </button>
+            </div>
           </div>
         </div>
         

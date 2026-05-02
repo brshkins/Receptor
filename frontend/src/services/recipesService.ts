@@ -1,33 +1,71 @@
+// src/services/recipesService.ts
 import { apiClient } from './api';
+import { translateCategory, translateDifficulty, translateIngredient } from '../utils/translations';
 
 export interface Recipe {
-  id: number;
+  id: number | string;
   title: string;
-  image: string;
-  cooking_time: number;
-  category: string;
+  description?: string;
+  image?: string;
+  imageUrl?: string;
+  cooking_time?: number;
+  cookingTime?: number;
+  category?: string;
+  difficulty?: string;
+  ingredients?: string[];
+  isFavorite?: boolean;
+  instructions?: string[];
+  servings?: number;
+}
+
+export interface RecipesResponse {
+  data: Recipe[];
+  total?: number;
 }
 
 export interface RecipeFilters {
   search?: string;
+  ingredients?: string[];
+  difficulty?: string;
   category?: string;
-  max_time?: number;
-  sort?: 'alphabet_asc' | 'alphabet_desc' | 'time_asc' | 'time_desc';
+  sort?: 'asc' | 'desc';
+  sortBy?: 'name' | 'time' | 'difficulty' | 'category';
+  limit?: number;
+  page?: number;
 }
 
 export const recipesService = {
-  async getAll(params?: RecipeFilters): Promise<Recipe[]> {
+  async getAll(params?: {
+    search?: string;
+  }): Promise<Recipe[]> {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.append('search', params.search);
-    if (params?.category) queryParams.append('category', params.category);
-    if (typeof params?.max_time === 'number') queryParams.append('max_time', String(params.max_time));
-    if (params?.sort) queryParams.append('sort', params.sort);
-
+    
     const query = queryParams.toString();
-    return apiClient.get<Recipe[]>(`/recipes${query ? `?${query}` : ''}`);
+    const response = await apiClient.get<RecipesResponse>(`/recipes${query ? `?${query}` : ''}`);
+    
+    // Извлекаем массив рецептов из ответа
+    const recipes = response?.data || response;
+    return Array.isArray(recipes) ? recipes : [];
   },
 
-  async getById(id: string): Promise<Recipe> {
-    return apiClient.get<Recipe>(`/recipes/${id}`);
+  async getById(id: string | number): Promise<any> {
+    const response = await apiClient.get<any>(`/recipes/${id}`);
+    // Бэкенд может вернуть { data: {...} } или сразу объект
+    return response?.data || response;
+  },
+
+  async getRecipes(filters?: RecipeFilters): Promise<Recipe[]> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters?.search) queryParams.append('search', filters.search);
+    if (filters?.category) queryParams.append('category', filters.category);
+    if (filters?.difficulty) queryParams.append('difficulty', filters.difficulty);
+    
+    const query = queryParams.toString();
+    const response = await apiClient.get<RecipesResponse>(`/recipes${query ? `?${query}` : ''}`);
+    
+    const recipes = response?.data || response;
+    return Array.isArray(recipes) ? recipes : [];
   },
 };

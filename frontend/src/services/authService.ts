@@ -2,9 +2,10 @@
 import { apiClient } from './api';
 
 export interface User {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
+  avatar?: string;
 }
 
 export interface LoginCredentials {
@@ -20,21 +21,42 @@ export interface RegisterData {
 
 export interface AuthResponse {
   token: string;
+  user: User;
 }
 
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/register', data);
-    return response;
+    const response = await apiClient.post<any>('/auth/register', data);
+    
+    // Бэкенд возвращает { data: { token: "..." } }
+    const token = response?.data?.token || response?.token;
+    const user = response?.data?.user || response?.user;
+    
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+    
+    return { token, user };
   },
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    return response;
+    const response = await apiClient.post<any>('/auth/login', credentials);
+    
+    // Бэкенд возвращает { data: { token: "..." } }
+    const token = response?.data?.token || response?.token;
+    const user = response?.data?.user || response?.user;
+    
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+    
+    return { token, user };
   },
 
   async getMe(): Promise<User> {
-    return apiClient.get<User>('/auth/me');
+    const response = await apiClient.get<any>('/auth/me');
+    // Бэкенд может возвращать { data: { ... } }
+    return response?.data || response;
   },
 
   logout(): void {

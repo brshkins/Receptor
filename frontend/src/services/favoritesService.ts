@@ -1,25 +1,19 @@
+// src/services/favoritesService.ts
 import { apiClient } from './api';
-
-export interface FavoriteRecipe {
-  id: number;
-  title: string;
-  image: string;
-  cooking_time: number;
-  category: string;
-}
-
-export type FavoritesListResponse = FavoriteRecipe[] | number[];
+import { Recipe } from '../types';
 
 export const favoritesService = {
-  async list(): Promise<FavoritesListResponse> {
-    return apiClient.get<FavoritesListResponse>('/favorites');
+  async getAll(): Promise<Recipe[]> {
+    const response = await apiClient.get<any>('/favorites');
+    // Бэкенд возвращает { data: [...] }
+    return response?.data || response || [];
   },
 
-  async add(recipeId: number): Promise<null> {
-    return apiClient.post<null>(`/favorites/${recipeId}`);
+  async add(recipeId: string | number): Promise<void> {
+    return apiClient.post<void>(`/favorites/${recipeId}`);
   },
 
-  async remove(recipeId: number): Promise<null> {
-    return apiClient.delete<null>(`/favorites/${recipeId}`);
+  async remove(recipeId: string | number): Promise<void> {
+    return apiClient.delete<void>(`/favorites/${recipeId}`);
   },
 };

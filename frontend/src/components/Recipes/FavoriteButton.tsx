@@ -1,12 +1,11 @@
+// src/components/Recipes/FavoriteButton.tsx
 import React, { useState } from 'react';
-import { favoritesService } from '../../services/favoritesService';
-import { useAuth } from '../../contexts/AuthContext';
 import styles from './Recipes.module.css';
 
 interface FavoriteButtonProps {
-  recipeId: number;
+  recipeId: string;
   isFavorite: boolean;
-  onToggle?: (id: number) => void;
+  onToggle?: (id: string) => void;
   className?: string;
 }
 
@@ -18,28 +17,22 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const [isLoading, setIsLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
+
+  // Синхронизируем с пропсами
+  React.useEffect(() => {
+    setIsFavorite(initialFavorite);
+  }, [initialFavorite]);
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (isLoading) return;
-    if (!isAuthenticated) {
-      window.location.href = '/auth';
-      return;
-    }
+    if (isLoading || !onToggle) return;
     
     setIsLoading(true);
     try {
-      if (isFavorite) {
-        await favoritesService.remove(recipeId);
-        setIsFavorite(false);
-      } else {
-        await favoritesService.add(recipeId);
-        setIsFavorite(true);
-      }
-      onToggle?.(recipeId);
+      await onToggle(recipeId);
+      setIsFavorite(!isFavorite);
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     } finally {
@@ -49,10 +42,10 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   return (
     <button
-      className={`${className} ${isFavorite ? styles.active : ''}`}
+      className={`${className || styles.favoriteButton} ${isFavorite ? styles.favoriteActive : ''}`}
       onClick={handleClick}
       disabled={isLoading}
-      aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      aria-label={isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}
     >
       {isFavorite ? '❤️' : '🤍'}
     </button>

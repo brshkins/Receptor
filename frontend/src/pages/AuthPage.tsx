@@ -73,7 +73,7 @@ const AuthPage: React.FC = () => {
       }
       navigate(from, { replace: true });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Произошла ошибка';
+      const errorMessage = error.response?.data?.message || 'Произошла ошибка';
       setErrors({ submit: errorMessage });
     } finally {
       setIsLoading(false);
