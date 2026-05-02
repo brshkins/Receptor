@@ -175,3 +175,33 @@ func translateRecipeBodyText(s string) string {
 	}
 	return s
 }
+
+// formatRecipeAmountRu — единицы измерения из recipes.json в привычном для RU виде.
+func formatRecipeAmountRu(amount string) string {
+	amount = strings.TrimSpace(amount)
+	if amount == "" {
+		return ""
+	}
+	low := strings.ToLower(amount)
+	switch low {
+	case "to taste":
+		return "по вкусу"
+	case "pinch":
+		return "щепотка"
+	}
+	s := amount
+	repls := []struct{ pat, repl string }{
+		{`(?i)\bto taste\b`, "по вкусу"},
+		{`(?i)\bpinch\b`, "щепотка"},
+		{`(?i)\btbsp\b`, "ст. л."},
+		{`(?i)\btsp\b`, "ч. л."},
+		{`(?i)\bcloves?\b`, "зубч."},
+		{`(?i)\bpcs?\b`, "шт."},
+		{`(?i)\bml\b`, "мл"},
+		{`(?i)\bg\b`, "г"},
+	}
+	for _, r := range repls {
+		s = regexp.MustCompile(r.pat).ReplaceAllString(s, r.repl)
+	}
+	return strings.TrimSpace(s)
+}

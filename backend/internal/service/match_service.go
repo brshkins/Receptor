@@ -43,7 +43,7 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 	}
 
 	rows, err := s.db.Query(ctx, `
-		SELECT r.id, r.title, r.image_url, ri.ingredient_id, i.name
+		SELECT r.id, r.title, r.image_url, r.cooking_time, ri.ingredient_id, i.name
 		FROM recipes r
 		INNER JOIN recipe_ingredients ri ON r.id = ri.recipe_id
 		INNER JOIN ingredients i ON ri.ingredient_id = i.id
@@ -55,17 +55,19 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 	defer rows.Close()
 
 	type bundle struct {
-		title   string
-		image   string
-		byID    map[int64]string
+		title       string
+		image       string
+		cookingTime int
+		byID        map[int64]string
 	}
 	recipes := make(map[int64]*bundle)
 
 	for rows.Next() {
 		var recipeID int64
 		var title, imageURL, ingName string
+		var cookingTime int
 		var ingredientID int64
-		if err := rows.Scan(&recipeID, &title, &imageURL, &ingredientID, &ingName); err != nil {
+		if err := rows.Scan(&recipeID, &title, &imageURL, &cookingTime, &ingredientID, &ingName); err != nil {
 			return nil, err
 		}
 		b, ok := recipes[recipeID]
@@ -75,6 +77,7 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 		}
 		b.title = title
 		b.image = imageURL
+		b.cookingTime = cookingTime
 		b.byID[ingredientID] = ingName
 	}
 	if err := rows.Err(); err != nil {
@@ -113,6 +116,7 @@ func (s *matchService) Match(ctx context.Context, req *dto.MatchRequest) ([]dto.
 			RecipeID:           recipeID,
 			Title:              b.title,
 			Image:              b.image,
+			CookingTime:        b.cookingTime,
 			MatchPercent:       pct,
 			Ingredients:        allIng,
 			MissingIngredients: missing,

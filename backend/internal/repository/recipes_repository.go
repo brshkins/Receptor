@@ -69,9 +69,9 @@ func (r *recipesRepository) GetByID(ctx context.Context, id int64) (*model.Recip
 	return &rec, nil
 }
 
-func (r *recipesRepository) GetIngredientNamesByRecipeID(ctx context.Context, recipeID int64) ([]string, error) {
+func (r *recipesRepository) GetIngredientLinesByRecipeID(ctx context.Context, recipeID int64) ([]model.RecipeIngredientLine, error) {
 	const q = `
-		SELECT i.name
+		SELECT i.name, ri.amount
 		FROM recipe_ingredients ri
 		INNER JOIN ingredients i ON i.id = ri.ingredient_id
 		WHERE ri.recipe_id = $1
@@ -82,13 +82,13 @@ func (r *recipesRepository) GetIngredientNamesByRecipeID(ctx context.Context, re
 	}
 	defer rows.Close()
 
-	out := make([]string, 0)
+	out := make([]model.RecipeIngredientLine, 0)
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var line model.RecipeIngredientLine
+		if err := rows.Scan(&line.Name, &line.Amount); err != nil {
 			return nil, err
 		}
-		out = append(out, name)
+		out = append(out, line)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

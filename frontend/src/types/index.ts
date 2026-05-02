@@ -76,12 +76,16 @@ export interface RecipeListItemDto {
   category: string;
 }
 
+export interface RecipeIngredientLineDto {
+  name: string;
+  amount: string;
+}
+
 /** GET /recipes/:id/details */
 export interface RecipeDetailsDto extends RecipeListItemDto {
   description: string;
   steps: string[];
-  /** Имена ингредиентов из backend (`ingredients`); при отсутствии ключа — пусто в UI */
-  ingredients?: string[];
+  ingredients?: RecipeIngredientLineDto[];
 }
 
 /** POST /match/by-ingredients, POST /upload — элемент результата (строго по backend). */
@@ -89,6 +93,7 @@ export type MatchResponse = {
   recipe_id: number;
   title: string;
   image: string;
+  cooking_time: number;
   match_percent: number;
   ingredients?: string[];
   missing_ingredients: string[];

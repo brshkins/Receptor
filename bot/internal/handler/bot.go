@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -30,6 +31,7 @@ const (
 	UserStateAwaitingRegisterEmail    UserState = "awaiting_register_email"
 	UserStateAwaitingRegisterPassword UserState = "awaiting_register_password"
 	UserStateAwaitingIngr             UserState = "awaiting_ingredients"
+	UserStateAwaitingRecipeSearch     UserState = "awaiting_recipe_search"
 )
 
 type UserSession struct {
@@ -52,6 +54,12 @@ type UserSession struct {
 
 	MatchResults  []dto.MatchResponse `json:"match_results,omitempty"`
 	MatchLastPage int                 `json:"match_last_page,omitempty"`
+
+	// Каталог «Рецепты»: как на сайте — поиск по названию (RU/EN), категория, сортировка.
+	RecipesSearchQuery    string `json:"recipes_search,omitempty"`
+	RecipesFilterCategory string `json:"recipes_cat,omitempty"`
+	RecipesSortBy         string `json:"recipes_sort_by,omitempty"` // name | time | category
+	RecipesSortDesc       bool   `json:"recipes_sort_desc,omitempty"`
 
 	PanelChatID    int64 `json:"panel_chat_id,omitempty"`
 	PanelMessageID int   `json:"panel_message_id,omitempty"`
@@ -114,6 +122,16 @@ func (h *TelegramHandler) loginKeyboard() *tgInlineKeyboardMarkup {
 
 func (h *TelegramHandler) compactMenuRow() []tgInlineKeyboardButton {
 	return []tgInlineKeyboardButton{{Text: "🏠 В меню", CallbackData: "nav:menu"}}
+}
+
+// Клавиатура экрана профиля: выход и переход в меню (для авторизованного пользователя).
+func (h *TelegramHandler) profileScreenKeyboard() *tgInlineKeyboardMarkup {
+	return &tgInlineKeyboardMarkup{
+		InlineKeyboard: [][]tgInlineKeyboardButton{
+			{{Text: "🚪 Выйти", CallbackData: "nav:logout"}},
+			h.compactMenuRow(),
+		},
+	}
 }
 
 func (h *TelegramHandler) withBack(kb *tgInlineKeyboardMarkup) *tgInlineKeyboardMarkup {
@@ -338,6 +356,11 @@ func (h *TelegramHandler) renderMatchesPage(ctx context.Context, chatID int64, u
 		b.WriteString("🍽 ")
 		b.WriteString(localizeRecipeTitle(m.Title))
 		b.WriteString("\n")
+		if m.CookingTime > 0 {
+			b.WriteString("⏱ ")
+			b.WriteString(strconv.Itoa(m.CookingTime))
+			b.WriteString(" мин\n")
+		}
 
 		pct := int(m.MatchPercent * 100)
 		b.WriteString("📊 ")
@@ -379,10 +402,11 @@ func (h *TelegramHandler) renderMatchesPage(ctx context.Context, chatID int64, u
 			}
 		}
 
-		rows = append(rows, []tgInlineKeyboardButton{
+		matchRow := []tgInlineKeyboardButton{
 			{Text: "Подробнее", CallbackData: fmt.Sprintf("recipe:%d", m.RecipeID)},
 			{Text: "❤️", CallbackData: fmt.Sprintf("fav:%d", m.RecipeID)},
-		})
+		}
+		rows = append(rows, matchRow)
 	}
 
 	if totalPages > 1 {
@@ -510,6 +534,14 @@ func (h *TelegramHandler) handleMessage(ctx context.Context, msg *tgMessage) err
 func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, userID int64, text string) error {
 	st := h.store.GetCopy(userID)
 
+	if st.State == UserStateAwaitingRecipeSearch {
+		sess := h.store.GetOrCreate(userID)
+		sess.RecipesSearchQuery = strings.TrimSpace(text)
+		sess.RecipesLastPage = 0
+		_ = h.store.Set(userID, UserStateIdle, st.Email, st.Token)
+		return h.renderRecipesPage(ctx, userID, chatID, 0, nil)
+	}
+
 	if st.State == UserStateIdle {
 		t := strings.ToLower(strings.TrimSpace(text))
 		switch t {
@@ -547,8 +579,8 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 	switch st.State {
 	case UserStateAwaitingRegisterName:
 		name := strings.TrimSpace(text)
-		if name == "" {
-			return h.present(ctx, chatID, userID, "Введите имя", h.withBack(nil), nil)
+		if err := service.ValidateRegisterName(name); err != nil {
+			return h.present(ctx, chatID, userID, err.Error(), h.withBack(nil), nil)
 		}
 		sess := h.store.GetOrCreate(userID)
 		sess.Name = name
@@ -558,17 +590,17 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		return h.present(ctx, chatID, userID, "Введите email", h.withBack(nil), nil)
 
 	case UserStateAwaitingRegisterEmail:
-		email := strings.TrimSpace(text)
-		if email == "" {
-			return h.present(ctx, chatID, userID, "Введите email", h.withBack(nil), nil)
+		email := strings.TrimSpace(strings.ToLower(text))
+		if err := service.ValidateEmail(email); err != nil {
+			return h.present(ctx, chatID, userID, err.Error(), h.withBack(nil), nil)
 		}
 		_ = h.store.Set(userID, UserStateAwaitingRegisterPassword, email, st.Token)
 		return h.present(ctx, chatID, userID, "Введите пароль", h.withBack(nil), nil)
 
 	case UserStateAwaitingRegisterPassword:
 		password := strings.TrimSpace(text)
-		if password == "" {
-			return h.present(ctx, chatID, userID, "Введите пароль", h.withBack(nil), nil)
+		if err := service.ValidateRegisterPassword(password); err != nil {
+			return h.present(ctx, chatID, userID, err.Error(), h.withBack(nil), nil)
 		}
 		sess := h.store.GetOrCreate(userID)
 		email := strings.TrimSpace(st.Email)
@@ -604,12 +636,12 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		sess.AuthFlow = ""
 		sess.Name = ""
 		_ = h.store.Save()
-		return h.present(ctx, chatID, userID, formatProfileCard(me.Email, me.ID), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), nil)
+		return h.present(ctx, chatID, userID, formatProfileCard(me.Name, me.Email), h.withBack(h.profileScreenKeyboard()), nil)
 
 	case UserStateAwaitingEmail:
-		email := strings.TrimSpace(text)
-		if email == "" {
-			return h.present(ctx, chatID, userID, "Введите email", h.withBack(nil), nil)
+		email := strings.TrimSpace(strings.ToLower(text))
+		if err := service.ValidateEmail(email); err != nil {
+			return h.present(ctx, chatID, userID, err.Error(), h.withBack(nil), nil)
 		}
 		_ = h.store.Set(userID, UserStateAwaitingPass, email, st.Token)
 		return h.present(ctx, chatID, userID, "Введите пароль", h.withBack(nil), nil)
@@ -659,7 +691,7 @@ func (h *TelegramHandler) handleIncomingText(ctx context.Context, chatID int64, 
 		sess.AuthFlow = ""
 		sess.Name = ""
 		_ = h.store.Save()
-		return h.present(ctx, chatID, userID, formatProfileCard(me.Email, me.ID), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), nil)
+		return h.present(ctx, chatID, userID, formatProfileCard(me.Name, me.Email), h.withBack(h.profileScreenKeyboard()), nil)
 
 	case UserStateAwaitingIngr:
 		parsed := parseIngredients(text)
@@ -713,8 +745,16 @@ func (h *TelegramHandler) handleIncomingPhoto(ctx context.Context, chatID int64,
 	return h.sendMatches(ctx, chatID, userID, matches, nil)
 }
 
-func formatProfileCard(email string, id int64) string {
-	return fmt.Sprintf("👤 Профиль\n\n📧 Email: %s\n🆔 ID: %d", email, id)
+func formatProfileCard(name, email string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "—"
+	}
+	email = strings.TrimSpace(email)
+	if email == "" {
+		email = "—"
+	}
+	return fmt.Sprintf("👤 Профиль\n\n🪪 Имя: %s\n📧 Email: %s", name, email)
 }
 
 func (h *TelegramHandler) renderProfileCard(ctx context.Context, chatID int64, userID int64, token string, panel *tgCallbackQueryMsg) error {
@@ -740,7 +780,7 @@ func (h *TelegramHandler) renderProfileCard(ctx context.Context, chatID int64, u
 	sess.ProfileEmail = me.Email
 	sess.ProfileName = me.Name
 	_ = h.store.Save()
-	return h.present(ctx, chatID, userID, formatProfileCard(me.Email, me.ID), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
+	return h.present(ctx, chatID, userID, formatProfileCard(me.Name, me.Email), h.withBack(h.profileScreenKeyboard()), panel)
 }
 
 func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbackQuery) error {
@@ -758,6 +798,41 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 	token := st.Token
 
 	switch {
+	case strings.HasPrefix(data, "rcp:"):
+		_ = h.store.SetState(userID, UserStateIdle)
+		sess := h.store.GetOrCreate(userID)
+		rest := strings.TrimPrefix(data, "rcp:")
+		switch {
+		case rest == "clearsearch":
+			sess.RecipesSearchQuery = ""
+		case rest == "reset":
+			sess.RecipesSearchQuery = ""
+			sess.RecipesFilterCategory = ""
+			sess.RecipesSortBy = ""
+			sess.RecipesSortDesc = false
+		case strings.HasPrefix(rest, "category:"):
+			v := strings.TrimPrefix(rest, "category:")
+			if v == "*" {
+				sess.RecipesFilterCategory = ""
+			} else {
+				sess.RecipesFilterCategory = v
+			}
+		case strings.HasPrefix(rest, "sort:"):
+			switch strings.TrimPrefix(rest, "sort:") {
+			case "name", "time", "category":
+				sess.RecipesSortBy = strings.TrimPrefix(rest, "sort:")
+			default:
+				return nil
+			}
+		case strings.HasPrefix(rest, "order:"):
+			sess.RecipesSortDesc = strings.TrimPrefix(rest, "order:") == "desc"
+		default:
+			return nil
+		}
+		sess.RecipesLastPage = 0
+		_ = h.store.Save()
+		return h.renderRecipesPage(ctx, userID, chatID, 0, panel)
+
 	case strings.HasPrefix(data, "nav:"):
 		_ = h.store.SetState(userID, UserStateIdle)
 		sess := h.store.GetOrCreate(userID)
@@ -779,9 +854,24 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			sess.BackPage = 0
 			sess.AuthFlow = ""
 			sess.Name = ""
-			_ = h.store.Save()
+			sess.RecipesSearchQuery = ""
+			sess.RecipesFilterCategory = ""
+			sess.RecipesSortBy = ""
+			sess.RecipesSortDesc = false
 			sess.RecipesLastPage = 0
 			_ = h.store.Save()
+			return h.renderRecipesPage(ctx, userID, chatID, 0, panel)
+
+		case "recipes_search":
+			_ = h.store.Set(userID, UserStateAwaitingRecipeSearch, st.Email, token)
+			kb := [][]tgInlineKeyboardButton{
+				{{Text: "⬅️ К списку", CallbackData: "nav:rcp_search_cancel"}},
+				h.compactMenuRow(),
+			}
+			return h.present(ctx, chatID, userID, "🔍 Введите слово из названия (по-русски или по-английски).", &tgInlineKeyboardMarkup{InlineKeyboard: kb}, panel)
+
+		case "rcp_search_cancel":
+			_ = h.store.Set(userID, UserStateIdle, st.Email, token)
 			return h.renderRecipesPage(ctx, userID, chatID, 0, panel)
 
 		case "favorites":
@@ -822,6 +912,19 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 				return h.present(ctx, chatID, userID, "Вы не авторизованы", h.withBack(h.loginKeyboard()), panel)
 			}
 			return h.renderProfileCard(ctx, chatID, userID, token, panel)
+
+		case "logout":
+			_ = h.store.Set(userID, UserStateIdle, "", "")
+			sess.ProfileID = 0
+			sess.ProfileEmail = ""
+			sess.ProfileName = ""
+			sess.ActiveNav = "menu"
+			sess.BackNav = ""
+			sess.BackPage = 0
+			sess.AuthFlow = ""
+			sess.Name = ""
+			_ = h.store.Save()
+			return h.present(ctx, chatID, userID, "Вы вышли из аккаунта. При необходимости войдите снова 👋", h.mainMenuKeyboard(), panel)
 
 		case "login":
 			sess.AuthFlow = "login"
@@ -944,12 +1047,16 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 		if len(recipe.Ingredients) > 0 {
 			b.WriteString("\n\n🥕 Ингредиенты:\n")
 			for _, ing := range recipe.Ingredients {
-				ing = strings.TrimSpace(ing)
-				if ing == "" {
+				name := strings.TrimSpace(ing.Name)
+				if name == "" {
 					continue
 				}
 				b.WriteString("· ")
-				b.WriteString(localizeIngredientDisplayName(ing))
+				b.WriteString(localizeIngredientDisplayName(name))
+				if a := formatRecipeAmountRu(ing.Amount); a != "" {
+					b.WriteString(" — ")
+					b.WriteString(a)
+				}
 				b.WriteString("\n")
 			}
 		}
@@ -986,7 +1093,7 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 			{{Text: favLabel, CallbackData: fmt.Sprintf("fav:%d", id)}},
 		}
 		detailKB = append(detailKB, h.compactMenuRow())
-		return h.present(ctx, chatID, userID, b.String(), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: detailKB}), panel)
+		return h.present(ctx, chatID, userID, b.String(), h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: detailKB}), panel, recipe.Image)
 
 	case strings.HasPrefix(data, "fav:"):
 		idStr := strings.TrimPrefix(data, "fav:")
@@ -1017,22 +1124,171 @@ func (h *TelegramHandler) handleCallbackQuery(ctx context.Context, cq *tgCallbac
 	return nil
 }
 
-func (h *TelegramHandler) renderRecipesPage(ctx context.Context, userID int64, chatID int64, page int, panel *tgCallbackQueryMsg) error {
-	const limit = 10
+func (h *TelegramHandler) filterRecipeCatalog(all []dto.RecipeResponse, sess *UserSession) []dto.RecipeResponse {
+	out := append([]dto.RecipeResponse(nil), all...)
+	q := strings.TrimSpace(strings.ToLower(sess.RecipesSearchQuery))
+	if q != "" {
+		next := out[:0]
+		for _, r := range out {
+			titleRu := strings.ToLower(localizeRecipeTitle(r.Title))
+			titleEn := strings.ToLower(strings.TrimSpace(r.Title))
+			if strings.Contains(titleRu, q) || strings.Contains(titleEn, q) {
+				next = append(next, r)
+			}
+		}
+		out = next
+	}
+	if cat := strings.TrimSpace(sess.RecipesFilterCategory); cat != "" {
+		next := out[:0]
+		for _, r := range out {
+			if strings.EqualFold(strings.TrimSpace(r.Category), cat) {
+				next = append(next, r)
+			}
+		}
+		out = next
+	}
+	sortBy := strings.TrimSpace(strings.ToLower(sess.RecipesSortBy))
+	if sortBy == "" {
+		sortBy = "name"
+	}
+	desc := sess.RecipesSortDesc
+	sort.SliceStable(out, func(i, j int) bool {
+		switch sortBy {
+		case "time":
+			ti, tj := out[i].CookingTime, out[j].CookingTime
+			if desc {
+				return ti > tj
+			}
+			return ti < tj
+		case "category":
+			ci := localizeCategory(out[i].Category)
+			cj := localizeCategory(out[j].Category)
+			if desc {
+				return ci > cj
+			}
+			return ci < cj
+		default:
+			ti := strings.TrimSpace(out[i].Title)
+			tj := strings.TrimSpace(out[j].Title)
+			if desc {
+				return ti > tj
+			}
+			return ti < tj
+		}
+	})
+	return out
+}
 
-	recipes, hasNext, err := h.botService.GetRecipesPaged(ctx, page, limit)
+func paginateRecipePage(recipes []dto.RecipeResponse, page, limit int) (slice []dto.RecipeResponse, hasNext bool) {
+	if page < 0 {
+		page = 0
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+	start := page * limit
+	if start >= len(recipes) {
+		return nil, false
+	}
+	end := start + limit
+	if end > len(recipes) {
+		end = len(recipes)
+	}
+	slice = append([]dto.RecipeResponse(nil), recipes[start:end]...)
+	hasNext = end < len(recipes)
+	return slice, hasNext
+}
+
+func (h *TelegramHandler) recipeCatalogControlRows(sess *UserSession) [][]tgInlineKeyboardButton {
+	sortBy := strings.TrimSpace(strings.ToLower(sess.RecipesSortBy))
+	if sortBy == "" {
+		sortBy = "name"
+	}
+	markSort := func(key, label string) string {
+		if sortBy == key {
+			return "✓ " + label
+		}
+		return label
+	}
+	markCat := func(cat, label string) string {
+		if cat == "" {
+			if sess.RecipesFilterCategory == "" {
+				return "✓ " + label
+			}
+			return label
+		}
+		if strings.EqualFold(sess.RecipesFilterCategory, cat) {
+			return "✓ " + label
+		}
+		return label
+	}
+	ascLabel, descLabel := "↑ Возр.", "↓ Убыв."
+	if !sess.RecipesSortDesc {
+		ascLabel = "✓ " + ascLabel
+	} else {
+		descLabel = "✓ " + descLabel
+	}
+
+	rows := [][]tgInlineKeyboardButton{
+		{
+			{Text: "🔍 Название", CallbackData: "nav:recipes_search"},
+		},
+	}
+	if strings.TrimSpace(sess.RecipesSearchQuery) != "" {
+		rows = append(rows, []tgInlineKeyboardButton{
+			{Text: "✖ Очистить поиск", CallbackData: "rcp:clearsearch"},
+		})
+	}
+	rows = append(rows,
+		[]tgInlineKeyboardButton{
+			{Text: markCat("", "Все"), CallbackData: "rcp:category:*"},
+			{Text: markCat("pasta", "Паста"), CallbackData: "rcp:category:pasta"},
+			{Text: markCat("meat", "Мясо"), CallbackData: "rcp:category:meat"},
+			{Text: markCat("vegetarian", "Вегет."), CallbackData: "rcp:category:vegetarian"},
+		},
+		[]tgInlineKeyboardButton{
+			{Text: markCat("breakfast", "Завтрак"), CallbackData: "rcp:category:breakfast"},
+			{Text: markCat("dessert", "Десерт"), CallbackData: "rcp:category:dessert"},
+			{Text: markCat("soup", "Суп"), CallbackData: "rcp:category:soup"},
+			{Text: markCat("salad", "Салат"), CallbackData: "rcp:category:salad"},
+		},
+		[]tgInlineKeyboardButton{
+			{Text: markCat("dinner", "Ужин"), CallbackData: "rcp:category:dinner"},
+			{Text: markCat("lunch", "Обед"), CallbackData: "rcp:category:lunch"},
+		},
+		[]tgInlineKeyboardButton{
+			{Text: markSort("name", "Имя"), CallbackData: "rcp:sort:name"},
+			{Text: markSort("time", "Время"), CallbackData: "rcp:sort:time"},
+			{Text: markSort("category", "Раздел"), CallbackData: "rcp:sort:category"},
+		},
+		[]tgInlineKeyboardButton{
+			{Text: ascLabel, CallbackData: "rcp:order:asc"},
+			{Text: descLabel, CallbackData: "rcp:order:desc"},
+			{Text: "↺ Сброс", CallbackData: "rcp:reset"},
+		},
+	)
+	return rows
+}
+
+func (h *TelegramHandler) renderRecipesPage(ctx context.Context, userID int64, chatID int64, page int, panel *tgCallbackQueryMsg) error {
+	const limit = 5
+
+	all, err := h.botService.GetRecipes(ctx)
 	if err != nil {
 		return h.present(ctx, chatID, userID, "Не удалось загрузить рецепты. Проверьте связь и нажмите «📖 Рецепты» ещё раз 🙏", h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
 	}
 
 	sess := h.store.GetOrCreate(userID)
+	filtered := h.filterRecipeCatalog(all, sess)
+	slice, hasNext := paginateRecipePage(filtered, page, limit)
+
 	sess.ActiveNav = "recipes"
 	sess.RecipesLastPage = page
 	sess.BackNav = "menu"
 	sess.BackPage = 0
 	_ = h.store.Save()
 
-	return h.renderRecipeListPageRecipesPaged(ctx, chatID, "Рецепты", recipes, page, hasNext, userID, panel)
+	return h.renderRecipeListPageRecipesPaged(ctx, chatID, "Рецепты", len(filtered), slice, page, hasNext, userID, panel)
 }
 
 func (h *TelegramHandler) renderFavoritesPage(ctx context.Context, userID int64, chatID int64, token string, panel *tgCallbackQueryMsg) error {
@@ -1077,10 +1333,11 @@ func (h *TelegramHandler) renderRecipeListPage(ctx context.Context, chatID int64
 		b.WriteString(localizeCategory(r.Category))
 		b.WriteString("\n\n")
 
-		rows = append(rows, []tgInlineKeyboardButton{
+		listRow := []tgInlineKeyboardButton{
 			{Text: "Подробнее", CallbackData: fmt.Sprintf("recipe:%d", r.ID)},
 			{Text: "❤️", CallbackData: fmt.Sprintf("fav:%d", r.ID)},
-		})
+		}
+		rows = append(rows, listRow)
 	}
 
 	rows = append(rows, h.compactMenuRow())
@@ -1088,23 +1345,43 @@ func (h *TelegramHandler) renderRecipeListPage(ctx context.Context, chatID int64
 	return h.present(ctx, chatID, userID, strings.TrimSpace(b.String()), h.withBack(kb), panel)
 }
 
-func (h *TelegramHandler) renderRecipeListPageRecipesPaged(ctx context.Context, chatID int64, title string, recipes []dto.RecipeResponse, page int, hasNext bool, userID int64, panel *tgCallbackQueryMsg) error {
+func (h *TelegramHandler) renderRecipeListPageRecipesPaged(ctx context.Context, chatID int64, title string, totalFiltered int, recipes []dto.RecipeResponse, page int, hasNext bool, userID int64, panel *tgCallbackQueryMsg) error {
+	sess := h.store.GetCopy(userID)
 	if len(recipes) == 0 {
 		if page > 0 {
 			msg := "😔 На этой странице пусто — вернитесь назад или в меню"
 			rows := [][]tgInlineKeyboardButton{
 				{{Text: "⬅️ Предыдущая", CallbackData: "nav:recipes_prev"}},
-				h.compactMenuRow(),
 			}
+			if title == "Рецепты" {
+				rows = append(rows, h.recipeCatalogControlRows(&sess)...)
+			}
+			rows = append(rows, h.compactMenuRow())
 			return h.present(ctx, chatID, userID, msg, h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: rows}), panel)
 		}
-		msg := "😔 Рецепты не найдены\n\nПопробуйте позже или зайдите в подбор по продуктам 🔍"
-		return h.present(ctx, chatID, userID, msg, h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: [][]tgInlineKeyboardButton{h.compactMenuRow()}}), panel)
+		msg := "😔 Рецепты не найдены\n\nПопробуйте изменить поиск или фильтры — или зайдите в подбор по продуктам 🔍"
+		rows := [][]tgInlineKeyboardButton{}
+		if title == "Рецепты" {
+			rows = append(rows, h.recipeCatalogControlRows(&sess)...)
+		}
+		rows = append(rows, h.compactMenuRow())
+		return h.present(ctx, chatID, userID, msg, h.withBack(&tgInlineKeyboardMarkup{InlineKeyboard: rows}), panel)
 	}
 
 	var b strings.Builder
 	b.WriteString(title)
-	b.WriteString(fmt.Sprintf(" (стр. %d)\n\n", page+1))
+	b.WriteString(fmt.Sprintf("\nНайдено: %d · стр. %d", totalFiltered, page+1))
+	if title == "Рецепты" {
+		if q := strings.TrimSpace(sess.RecipesSearchQuery); q != "" {
+			b.WriteString("\n🔍 ")
+			b.WriteString(q)
+		}
+		if c := strings.TrimSpace(sess.RecipesFilterCategory); c != "" {
+			b.WriteString("\n📂 ")
+			b.WriteString(localizeCategory(c))
+		}
+	}
+	b.WriteString("\n\n")
 
 	rows := make([][]tgInlineKeyboardButton, 0, len(recipes)+6)
 	for _, r := range recipes {
@@ -1118,10 +1395,11 @@ func (h *TelegramHandler) renderRecipeListPageRecipesPaged(ctx context.Context, 
 		b.WriteString(localizeCategory(r.Category))
 		b.WriteString("\n\n")
 
-		rows = append(rows, []tgInlineKeyboardButton{
+		pageRow := []tgInlineKeyboardButton{
 			{Text: "Подробнее", CallbackData: fmt.Sprintf("recipe:%d", r.ID)},
 			{Text: "❤️", CallbackData: fmt.Sprintf("fav:%d", r.ID)},
-		})
+		}
+		rows = append(rows, pageRow)
 	}
 
 	navRow := make([]tgInlineKeyboardButton, 0, 2)
@@ -1133,6 +1411,10 @@ func (h *TelegramHandler) renderRecipeListPageRecipesPaged(ctx context.Context, 
 	}
 	if len(navRow) > 0 {
 		rows = append(rows, navRow)
+	}
+
+	if title == "Рецепты" {
+		rows = append(rows, h.recipeCatalogControlRows(&sess)...)
 	}
 
 	rows = append(rows, h.compactMenuRow())
@@ -1261,85 +1543,159 @@ func (h *TelegramHandler) downloadFile(ctx context.Context, filePath string) ([]
 	return io.ReadAll(resp.Body)
 }
 
-func (h *TelegramHandler) present(ctx context.Context, chatID int64, userID int64, text string, kb *tgInlineKeyboardMarkup, panel *tgCallbackQueryMsg) error {
+func (h *TelegramHandler) present(ctx context.Context, chatID int64, userID int64, text string, kb *tgInlineKeyboardMarkup, panel *tgCallbackQueryMsg, photoURL ...string) error {
+	photo := ""
+	if len(photoURL) > 0 {
+		photo = strings.TrimSpace(photoURL[0])
+	}
 	text = strings.TrimSpace(text)
-	if text == "" {
+	if text == "" && photo == "" {
 		text = "\u00a0"
 	}
 
-	tryEdit := func(cid int64, mid int) bool {
-		if mid <= 0 || cid == 0 {
-			return false
+	var oldMid int
+	if panel != nil && panel.Chat != nil && panel.MessageID > 0 {
+		oldMid = panel.MessageID
+	}
+	if oldMid == 0 {
+		st := h.store.GetOrCreate(userID)
+		if st.PanelMessageID > 0 && st.PanelChatID == chatID {
+			oldMid = st.PanelMessageID
 		}
-		if err := h.editMessageText(ctx, cid, mid, text, kb); err != nil {
-			log.Printf("present: edit failed chat=%d msg=%d: %v", cid, mid, err)
-			return false
+	}
+	if oldMid > 0 {
+		_ = h.deleteMessage(ctx, chatID, oldMid)
+	}
+
+	var newMid int
+	var err error
+	if photo != "" {
+		cap := truncateTelegramCaption(text, 1024)
+		newMid, err = h.sendPhotoReturnID(ctx, chatID, photo, cap, kb)
+		if err != nil {
+			log.Printf("present: sendPhoto failed, fallback to text: %v", err)
+			if text == "" {
+				text = "\u00a0"
+			}
+			newMid, err = h.sendMessageReturnID(ctx, chatID, text, kb)
 		}
-		return true
+	} else {
+		if text == "" {
+			text = "\u00a0"
+		}
+		newMid, err = h.sendMessageReturnID(ctx, chatID, text, kb)
 	}
-
-	if panel != nil && panel.Chat != nil && tryEdit(panel.Chat.ID, panel.MessageID) {
-		return h.store.SetPanelMessage(userID, panel.Chat.ID, panel.MessageID)
-	}
-
-	st := h.store.GetOrCreate(userID)
-	if st.PanelMessageID > 0 && st.PanelChatID == chatID && tryEdit(chatID, st.PanelMessageID) {
-		return nil
-	}
-
-	mid, err := h.sendMessageReturnID(ctx, chatID, text, kb)
 	if err != nil {
 		return err
 	}
-	return h.store.SetPanelMessage(userID, chatID, mid)
+	return h.store.SetPanelMessage(userID, chatID, newMid)
 }
 
-func (h *TelegramHandler) editMessageText(ctx context.Context, chatID int64, messageID int, text string, kb *tgInlineKeyboardMarkup) error {
-	endpoint := h.apiBaseURL + "/editMessageText"
+func truncateTelegramCaption(s string, maxRunes int) string {
+	s = strings.TrimSpace(s)
+	r := []rune(s)
+	if len(r) <= maxRunes {
+		return s
+	}
+	cut := maxRunes - 1
+	for cut > 0 && r[cut] != ' ' {
+		cut--
+	}
+	if cut < maxRunes/2 {
+		cut = maxRunes - 1
+	}
+	return strings.TrimSpace(string(r[:cut])) + "…"
+}
+
+func (h *TelegramHandler) deleteMessage(ctx context.Context, chatID int64, messageID int) error {
+	if messageID <= 0 {
+		return nil
+	}
+	endpoint := h.apiBaseURL + "/deleteMessage"
 	payload := struct {
-		ChatID      int64                   `json:"chat_id"`
-		MessageID   int                     `json:"message_id"`
-		Text        string                  `json:"text"`
-		ReplyMarkup *tgInlineKeyboardMarkup `json:"reply_markup,omitempty"`
+		ChatID    int64 `json:"chat_id"`
+		MessageID int   `json:"message_id"`
 	}{
-		ChatID:      chatID,
-		MessageID:   messageID,
-		Text:        text,
-		ReplyMarkup: kb,
+		ChatID:    chatID,
+		MessageID: messageID,
 	}
 	b, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("marshal editMessageText: %w", err)
+		return fmt.Errorf("marshal deleteMessage: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(b))
 	if err != nil {
-		return fmt.Errorf("create editMessageText request: %w", err)
+		return fmt.Errorf("create deleteMessage request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("editMessageText request: %w", err)
+		return fmt.Errorf("deleteMessage request: %w", err)
 	}
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
-	low := strings.ToLower(string(bodyBytes))
-	if strings.Contains(low, "message is not modified") {
-		return nil
-	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("editMessageText failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+		return fmt.Errorf("deleteMessage failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
 	}
 	var out struct {
 		OK bool `json:"ok"`
 	}
 	if err := json.Unmarshal(bodyBytes, &out); err != nil {
-		return fmt.Errorf("decode editMessageText: %w", err)
+		return fmt.Errorf("decode deleteMessage: %w", err)
 	}
-	if !out.OK && !strings.Contains(low, "message is not modified") {
-		return fmt.Errorf("editMessageText: ok=false body=%s", strings.TrimSpace(string(bodyBytes)))
+	if !out.OK {
+		return fmt.Errorf("deleteMessage: ok=false body=%s", strings.TrimSpace(string(bodyBytes)))
 	}
 	return nil
+}
+
+func (h *TelegramHandler) sendPhotoReturnID(ctx context.Context, chatID int64, photo string, caption string, kb *tgInlineKeyboardMarkup) (int, error) {
+	endpoint := h.apiBaseURL + "/sendPhoto"
+	payload := struct {
+		ChatID      int64                   `json:"chat_id"`
+		Photo       string                  `json:"photo"`
+		Caption     string                  `json:"caption,omitempty"`
+		ReplyMarkup *tgInlineKeyboardMarkup `json:"reply_markup,omitempty"`
+	}{
+		ChatID:      chatID,
+		Photo:       photo,
+		Caption:     caption,
+		ReplyMarkup: kb,
+	}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return 0, fmt.Errorf("marshal sendPhoto: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(b))
+	if err != nil {
+		return 0, fmt.Errorf("create sendPhoto request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := h.httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("sendPhoto request: %w", err)
+	}
+	defer resp.Body.Close()
+	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, fmt.Errorf("sendPhoto failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+	}
+	var out struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			MessageID int `json:"message_id"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(bodyBytes, &out); err != nil {
+		return 0, fmt.Errorf("decode sendPhoto: %w", err)
+	}
+	if !out.OK {
+		return 0, fmt.Errorf("sendPhoto: ok=false body=%s", strings.TrimSpace(string(bodyBytes)))
+	}
+	if out.Result.MessageID <= 0 {
+		return 0, fmt.Errorf("sendPhoto: no message_id in response")
+	}
+	return out.Result.MessageID, nil
 }
 
 func (h *TelegramHandler) sendMessageReturnID(ctx context.Context, chatID int64, text string, kb *tgInlineKeyboardMarkup) (int, error) {
@@ -1436,5 +1792,6 @@ type tgInlineKeyboardMarkup struct {
 
 type tgInlineKeyboardButton struct {
 	Text         string `json:"text"`
-	CallbackData string `json:"callback_data"`
+	CallbackData string `json:"callback_data,omitempty"`
+	URL          string `json:"url,omitempty"`
 }

@@ -13,6 +13,7 @@ import {
   translateIngredientDisplayName,
   translateRecipeEnglishText,
 } from '../utils/recipeTextRu';
+import { formatRecipeAmountRu } from '../utils/formatRecipeAmountRu';
 import { recipeBodyRuByTitleLower } from '../utils/recipeBodyRu.generated';
 import type { RecipeDetailsDto } from '../types';
 import styles from './Pages.module.css';
@@ -83,7 +84,7 @@ const RecipeDetailPage: React.FC = () => {
       <div className={styles.recipeDetail}>
         <div className={styles.detailHeader}>
           {recipe.image ? (
-            <img src={recipe.image} alt="" className={styles.detailHeroImage} />
+            <img src={recipe.image} alt={titleRu} className={styles.detailHeroImage} />
           ) : (
             <div className={styles.detailImagePlaceholder}>
               <span className={styles.detailEmoji}>{categoryEmoji}</span>
@@ -115,13 +116,16 @@ const RecipeDetailPage: React.FC = () => {
               <span>🥕</span> Ингредиенты
             </h2>
             <div className={styles.ingredientsList}>
-              {ingredients.map((name, index) => (
-                <div key={`${index}-${name}`} className={styles.ingredientItem}>
-                  <span className={styles.ingredientName}>
-                    {translateIngredientDisplayName(name)}
-                  </span>
-                </div>
-              ))}
+              {ingredients.map((line, index) => {
+                const nameRu = translateIngredientDisplayName(line.name);
+                const amt = formatRecipeAmountRu(line.amount ?? '');
+                return (
+                  <div key={`${index}-${line.name}`} className={styles.ingredientItem}>
+                    <span className={styles.ingredientName}>{nameRu}</span>
+                    {amt ? <span className={styles.ingredientAmount}>{amt}</span> : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

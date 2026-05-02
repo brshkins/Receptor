@@ -2713,15 +2713,15 @@
         "category": "breakfast",
         "ingredients": [
             {
-                "name": "cream",
-                "amount": "250 g"
+                "name": "yogurt",
+                "amount": "200 g"
             },
             {
-                "name": "salt",
+                "name": "banana",
                 "amount": "1 pc"
             },
             {
-                "name": "tomato",
+                "name": "honey",
                 "amount": "1 tbsp"
             }
         ],

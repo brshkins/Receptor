@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { MatchResponse } from '../../types';
 import { translateIngredientDisplayName } from '../../utils/recipeTextRu';
-import { translateRecipeTitle } from '../../utils/translations';
+import { translateRecipeTitle, formatTime } from '../../utils/translations';
 import styles from './Recipes.module.css';
 
 /** API отдаёт `match_percent` как долю 0–1 (см. docs/API.md). */
@@ -31,6 +31,10 @@ export const MatchRecipeList: React.FC<MatchRecipeListProps> = ({ items }) => {
       {items.map((m) => {
         const titleRu = translateRecipeTitle(m.title);
         const pct = matchPercentForDisplay(m.match_percent);
+        const timeLabel =
+          typeof m.cooking_time === 'number' && m.cooking_time > 0
+            ? formatTime(m.cooking_time)
+            : '';
         return (
           <div key={m.recipe_id} className={styles.recipeCard}>
             <Link to={`/recipes/${m.recipe_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -44,6 +48,12 @@ export const MatchRecipeList: React.FC<MatchRecipeListProps> = ({ items }) => {
               <div className={styles.recipeContent}>
                 <h3 className={styles.recipeTitle}>{titleRu}</h3>
                 <div className={styles.recipeMeta}>
+                  {timeLabel ? (
+                    <span className={styles.metaItem}>
+                      <span className={styles.metaIcon}>⏱️</span>
+                      <span>{timeLabel}</span>
+                    </span>
+                  ) : null}
                   <span className={styles.metaItem}>
                     <span className={styles.metaIcon}>📊</span>
                     <span>Совпадение: {pct}%</span>

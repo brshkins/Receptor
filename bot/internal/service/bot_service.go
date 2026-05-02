@@ -79,7 +79,7 @@ func (s *botService) GetRecipesPaged(ctx context.Context, page, limit int) ([]dt
 		page = 0
 	}
 	if limit <= 0 {
-		limit = 10
+		limit = 5
 	}
 	start := page * limit
 	if start >= len(all) {
