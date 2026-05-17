@@ -1,5 +1,5 @@
 // src/pages/RecipeFinderPage.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MatchRecipeList } from '../components/Recipes/MatchRecipeList';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { matchService } from '../services/matchService';
@@ -8,19 +8,53 @@ import type { MatchResponse } from '../types';
 import { getApiErrorMessage } from '../utils/apiError';
 import styles from './Pages.module.css';
 
+const SEARCH_STATE_KEY = 'receptor_finder_search';
+
+// Загружаем сохранённое состояние
+const loadSavedState = () => {
+  try {
+    const saved = sessionStorage.getItem(SEARCH_STATE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) { /* ignore */ }
+  return null;
+};
+
+// Сохраняем состояние
+const saveState = (hasSearched: boolean, recipes: MatchResponse[]) => {
+  try {
+    sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify({ hasSearched, recipes }));
+  } catch (e) { /* ignore */ }
+};
+
+// Очищаем состояние
+const clearState = () => {
+  sessionStorage.removeItem(SEARCH_STATE_KEY);
+};
+
 const RecipeFinderPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ingredients' | 'camera'>('ingredients');
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [currentIngredient, setCurrentIngredient] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [recipes, setRecipes] = useState<MatchResponse[]>([]);
+  
+  // Загружаем сохранённые результаты при старте
+  const savedState = loadSavedState();
+  const [recipes, setRecipes] = useState<MatchResponse[]>(savedState?.recipes || []);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(savedState?.hasSearched || false);
+
+  // Сохраняем результаты при изменении
+  useEffect(() => {
+    if (hasSearched && recipes.length > 0) {
+      saveState(hasSearched, recipes);
+    }
+  }, [hasSearched, recipes]);
 
   const resetSearchResults = () => {
     setHasSearched(false);
     setSearchError(null);
     setRecipes([]);
+    clearState();
   };
   
   // Для камеры
@@ -77,6 +111,7 @@ const RecipeFinderPage: React.FC = () => {
     try {
       const recipes = await matchService.matchByIngredients(ingredients);
       setRecipes(recipes);
+      saveState(true, recipes); // ← Сохраняем сразу
     } catch (error) {
       console.error('Ошибка поиска:', error);
       setSearchError(getApiErrorMessage(error, 'Не удалось выполнить подбор по ингредиентам'));
@@ -89,12 +124,10 @@ const RecipeFinderPage: React.FC = () => {
   // ========== СЦЕНАРИЙ 2: КАМЕРА ==========
   const startCamera = async () => {
     try {
-    // Останавливаем предыдущий поток если есть
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
 
-    // Запрашиваем камеру
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment',
@@ -105,7 +138,6 @@ const RecipeFinderPage: React.FC = () => {
 
       setStream(mediaStream);
 
-    // Дожидаемся следующего рендера и устанавливаем поток
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
@@ -124,33 +156,29 @@ const RecipeFinderPage: React.FC = () => {
     }
   };
 
-  // Захват фото с камеры
-const capturePhoto = () => {
-  if (videoRef.current && canvasRef.current) {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
       
-      if (isMultiMode) {
-        // Добавляем к существующим
-        setCapturedImages(prev => [...prev, imageData]);
-      } else {
-        // Заменяем
-        setCapturedImages([imageData]);
-        stopCamera();
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        if (isMultiMode) {
+          setCapturedImages(prev => [...prev, imageData]);
+        } else {
+          setCapturedImages([imageData]);
+          stopCamera();
+        }
       }
     }
-  }
-};
+  };
 
-// Загрузка с устройства
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -175,31 +203,19 @@ const capturePhoto = () => {
     });
   };
 
-// Удаление фото
   const removeImage = (index: number) => {
     setCapturedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-// Очистка всех фото
   const clearAllImages = () => {
     setCapturedImages([]);
     stopCamera();
-  };
-
-// Продолжить съёмку (в мульти-режиме)
-  const continueShooting = () => {
-    startCamera();
   };
 
   const retakePhoto = () => {
     setCapturedImages([]);
     stopCamera();
   };
-
-  const backToCamera = () => {
-  setCapturedImages([]);
-  startCamera();
-};
 
   const handleFindByImages = async () => {
     if (capturedImages.length === 0) return;
@@ -214,6 +230,7 @@ const capturePhoto = () => {
       );
       const recipes = await uploadService.uploadAndMatch(blobs);
       setRecipes(recipes);
+      saveState(true, recipes); // ← Сохраняем сразу
     } catch (error) {
       console.error('Ошибка распознавания:', error);
       setSearchError(getApiErrorMessage(error, 'Не удалось распознать фото или выполнить подбор'));
@@ -232,7 +249,6 @@ const capturePhoto = () => {
     }
   };
 
-  // Очистка при уходе со страницы
   useEffect(() => {
     return () => {
       stopCamera();
@@ -314,8 +330,13 @@ const capturePhoto = () => {
                 <div className={styles.selectedGrid}>
                   {ingredients.map(ing => (
                     <div key={ing} className={styles.selectedChip}>
-                      {ing}
-                      <button onClick={() => handleRemoveIngredient(ing)}>✕</button>
+                      <span>{ing}</span>
+                      <button 
+                        onClick={() => handleRemoveIngredient(ing)}
+                        className={styles.removeButton}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -340,7 +361,6 @@ const capturePhoto = () => {
               <p>ИИ распознает ингредиенты на фото</p>
             </div>
 
-            {/* Режим съёмки: одиночный / множественный */}
             {!stream && capturedImages.length === 0 && (
               <div className={styles.modeSelector}>
                 <button 
@@ -358,7 +378,6 @@ const capturePhoto = () => {
               </div>
             )}
 
-            {/* Опции выбора */}
             {!stream && capturedImages.length === 0 && (
               <div className={styles.cameraOptions}>
                 <div className={styles.optionCard} onClick={startCamera}>
@@ -388,7 +407,6 @@ const capturePhoto = () => {
               </div>
             )}
 
-            {/* Предпросмотр камеры */}
             {stream && (
               <div className={styles.cameraPreview}>
                 <video 
@@ -404,9 +422,6 @@ const capturePhoto = () => {
                   </button>
                   <button className={styles.backToOptionsButton} onClick={() => {
                     stopCamera();
-                    if (capturedImages.length > 0) {
-              // Если уже есть фото, не сбрасываем режим
-                    }
                   }}>
                     ← {capturedImages.length > 0 ? 'Готово' : 'Назад'}
                   </button>
@@ -420,7 +435,6 @@ const capturePhoto = () => {
               </div>
             )}
 
-            {/* Галерея выбранных фото */}
             {capturedImages.length > 0 && (
               <div className={styles.galleryContainer}>
                 <div className={styles.galleryHeader}>

@@ -13,6 +13,7 @@ export const ingredientNameEnToRu: Record<string, string> = {
   beef: 'Говядина',
   berries: 'Ягоды',
   berry: 'Ягоды',
+  bread: 'Хлеб',
   broccoli: 'Брокколи',
   butter: 'Масло сливочное',
   cabbage: 'Капуста',

@@ -1,6 +1,5 @@
 // src/pages/RecipesPage.tsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { RecipeList } from '../components/Recipes/RecipeList';
 import { SearchBar } from '../components/Common/SearchBar';
 import { FilterPanel } from '../components/Recipes/FilterPanel';
@@ -87,8 +86,8 @@ const RecipesPage: React.FC = () => {
       // Сортировка
       if (filters.sortBy === 'time') {
         filtered.sort((a, b) => {
-          const ta = a.cooking_time ?? 0;  // ← ИСПРАВЛЕНО
-          const tb = b.cooking_time ?? 0;  // ← ИСПРАВЛЕНО
+          const ta = a.cooking_time ?? 0;
+          const tb = b.cooking_time ?? 0;
           return filters.sort === 'asc' ? ta - tb : tb - ta;
         });
       } else if (filters.sortBy === 'name') {
@@ -148,11 +147,6 @@ const RecipesPage: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <Link to="/" className={styles.homeButton}>
-        <span className={styles.homeButtonIcon}>🏠</span>
-        <span>На главную</span>
-      </Link>
-
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>
           <span className={styles.pageTitleEmoji}>📖</span>
