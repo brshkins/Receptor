@@ -1,5 +1,6 @@
 // src/pages/RecipesPage.tsx
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { RecipeList } from '../components/Recipes/RecipeList';
 import { SearchBar } from '../components/Common/SearchBar';
 import { FilterPanel } from '../components/Recipes/FilterPanel';
@@ -8,8 +9,25 @@ import { recipesService } from '../services/recipesService';
 import { favoritesService } from '../services/favoritesService';
 import { Recipe, RecipeFilters as FilterType } from '../types';
 import { translateCategory, translateRecipeTitle } from '../utils/translations';
-import { getApiErrorMessage } from '../utils/apiError';
 import styles from './Pages.module.css';
+
+const FILTERS_STORAGE_KEY = 'receptor_recipe_filters';
+
+// Загружаем фильтры из localStorage
+const loadSavedFilters = (): FilterType => {
+  try {
+    const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) { /* ignore */ }
+  return { sort: 'asc', sortBy: 'name' };
+};
+
+// Сохраняем фильтры в localStorage
+const saveFiltersToStorage = (filters: FilterType) => {
+  try {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+  } catch (e) { /* ignore */ }
+};
 
 const RecipesPage: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -17,13 +35,22 @@ const RecipesPage: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterType>({ sort: 'asc', sortBy: 'name' });
+  const [filters, setFilters] = useState<FilterType>(loadSavedFilters);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  // Сохраняем фильтры при каждом изменении
+  useEffect(() => {
+    saveFiltersToStorage(filters);
+  }, [filters]);
 
   const loadFavoriteIds = useCallback(async () => {
     try {
       const favorites = await favoritesService.getAll();
-      const ids = new Set(favorites.map((f) => String(f.id)));
+      const responseData = favorites as any;
+      const data = Array.isArray(responseData) 
+        ? responseData 
+        : responseData?.data || [];
+      const ids = new Set<string>(data.map((f: any) => String(f.id || f.recipe_id)));
       setFavoriteIds(ids);
       return ids;
     } catch (error) {
@@ -36,7 +63,6 @@ const RecipesPage: React.FC = () => {
     try {
       setLoading(true);
       setLoadError(null);
-      // Полный список с бэкенда: поиск по названию только на EN в БД, пользователь вводит RU.
       const recipesList = await recipesService.getAll();
 
       const favIds = await loadFavoriteIds();
@@ -54,16 +80,23 @@ const RecipesPage: React.FC = () => {
         });
       }
 
-      if (filters.category) filtered = filtered.filter(r => r.category === filters.category);
+      if (filters.category) {
+        filtered = filtered.filter(r => r.category === filters.category);
+      }
 
+      // Сортировка
       if (filters.sortBy === 'time') {
         filtered.sort((a, b) => {
-          const ta = a.cookingTime ?? a.cooking_time ?? 0;
-          const tb = b.cookingTime ?? b.cooking_time ?? 0;
+          const ta = a.cooking_time ?? 0;  // ← ИСПРАВЛЕНО
+          const tb = b.cooking_time ?? 0;  // ← ИСПРАВЛЕНО
           return filters.sort === 'asc' ? ta - tb : tb - ta;
         });
       } else if (filters.sortBy === 'name') {
-        filtered.sort((a, b) => filters.sort === 'asc' ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title));
+        filtered.sort((a, b) => 
+          filters.sort === 'asc' 
+            ? a.title.localeCompare(b.title) 
+            : b.title.localeCompare(a.title)
+        );
       } else if (filters.sortBy === 'category') {
         filtered.sort((a, b) => {
           const ca = translateCategory(a.category) || '';
@@ -75,8 +108,7 @@ const RecipesPage: React.FC = () => {
       setRecipes(filtered);
     } catch (error: unknown) {
       console.error('Failed to load recipes:', error);
-      const message = error instanceof Error ? error.message : 'Не удалось загрузить рецепты';
-      setLoadError(getApiErrorMessage(error, message));
+      setLoadError('Не удалось загрузить рецепты');
       setRecipes([]);
     } finally { setLoading(false); }
   }, [searchTerm, filters, loadFavoriteIds]);
@@ -84,7 +116,10 @@ const RecipesPage: React.FC = () => {
   useEffect(() => { loadRecipes(); }, [loadRecipes]);
 
   const handleSearch = (value: string) => setSearchTerm(value);
-  const handleFilterChange = (newFilters: FilterType) => setFilters(newFilters);
+  
+  const handleFilterChange = (newFilters: FilterType) => {
+    setFilters(newFilters);
+  };
 
   const handleFavoriteToggle = async (id: string) => {
     const recipe = recipes.find(r => String(r.id) === id);
@@ -113,14 +148,35 @@ const RecipesPage: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
+      <Link to="/" className={styles.homeButton}>
+        <span className={styles.homeButtonIcon}>🏠</span>
+        <span>На главную</span>
+      </Link>
+
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}><span className={styles.pageTitleEmoji}>📖</span><span className={styles.pageTitleText}>Все рецепты</span></h1>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.pageTitleEmoji}>📖</span>
+          <span className={styles.pageTitleText}>Все рецепты</span>
+        </h1>
         <p className={styles.pageDescription}>Найди идеальный рецепт из нашей коллекции</p>
       </div>
+
       <div className={styles.searchSection}>
-        <SearchBar onSearch={handleSearch} onFilterClick={() => setIsFilterOpen(true)} placeholder="Поиск по названию..." initialValue={searchTerm} isFilterActive={isFilterActive} />
+        <SearchBar 
+          onSearch={handleSearch} 
+          onFilterClick={() => setIsFilterOpen(true)} 
+          placeholder="Поиск по названию..." 
+          initialValue={searchTerm} 
+          isFilterActive={isFilterActive} 
+        />
       </div>
-      <FilterPanel filters={filters} onFilterChange={handleFilterChange} isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+
+      <FilterPanel 
+        filters={filters} 
+        onFilterChange={handleFilterChange} 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)} 
+      />
 
       {loadError ? (
         <div className={styles.emptyState} role="alert">

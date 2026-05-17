@@ -165,26 +165,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               >
                 🥗 Салат
               </button>
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'dinner' ? styles.chipActive : ''}`}
-                onClick={() => {
-                  const newFilters = { ...localFilters, category: 'dinner' };
-                  setLocalFilters(newFilters);
-                  onFilterChange(newFilters);
-                }}
-              >
-                🌙 Ужин
-              </button>
-              <button 
-                className={`${styles.chip} ${styles.chipSmall} ${localFilters.category === 'lunch' ? styles.chipActive : ''}`}
-                onClick={() => {
-                  const newFilters = { ...localFilters, category: 'lunch' };
-                  setLocalFilters(newFilters);
-                  onFilterChange(newFilters);
-                }}
-              >
-                🍴 Обед
-              </button>
             </div>
           </div>
           <div className={styles.filterChipContainer}>

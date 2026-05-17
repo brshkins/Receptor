@@ -333,36 +333,66 @@
   font-size: 1rem;
 }
 
+/* src/components/Recipes/Recipes.module.css */
+
 /* Группа чипсов */
 .chipGroup {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* Маленькие чипсы */
+/* Овальная плашка-контейнер */
+.filterChipContainer {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--orange-light);
+  transition: all 0.3s ease;
+}
+
+.filterChipContainer:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--orange-primary);
+}
+
+/* Заголовок внутри плашки */
+.filterChipLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--orange-deep);
+}
+
+.labelIcon {
+  font-size: 1.1rem;
+}
+
+/* Базовый чипс */
 .chip {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 16px;
+  padding: 10px 20px;
   background: var(--yellow-soft);
   border: 2px solid var(--orange-light);
   border-radius: 100px;
   color: #4A3525;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  display: flex;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
   box-shadow: var(--shadow-sm);
 }
 
 .chipSmall {
-  padding: 8px 12px;
-  font-size: 0.8rem;
+  padding: 8px 16px;
+  font-size: 0.85rem;
 }
 
 .chip:hover {
@@ -381,25 +411,24 @@
 
 .chipActive:hover {
   background: linear-gradient(to right, #FFA000 0%, #F57C00 100%);
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px);
 }
 
-.chipIcon {
-  font-size: 1rem;
-  transition: transform 0.3s ease;
-}
-
-.chip:hover .chipIcon {
-  transform: scale(1.15);
-}
-
-.chipActive .chipIcon {
-  filter: brightness(0) invert(1);
-}
-
-.chipText {
-  font-weight: 600;
-  white-space: nowrap;
+/* Адаптивность */
+@media (max-width: 480px) {
+  .filterChipContainer {
+    padding: 16px;
+  }
+  
+  .chip {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+  
+  .chipSmall {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
 }
 
 /* Селект */
