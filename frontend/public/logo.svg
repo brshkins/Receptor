@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Градиент для фона -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E65100"/>
+      <stop offset="100%" style="stop-color:#FFB300"/>
+    </linearGradient>
+    <!-- Градиент для кастрюли -->
+    <linearGradient id="potGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#E0E0E0"/>
+    </linearGradient>
+    <!-- Градиент для крышки -->
+    <linearGradient id="lidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5F5F5"/>
+      <stop offset="100%" style="stop-color:#BDBDBD"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Круглый фон -->
+  <circle cx="50" cy="50" r="48" fill="url(#bgGrad)"/>
+  
+  <!-- Пар (сзади) -->
+  <g opacity="0.7">
+    <!-- Левый пар -->
+    <path d="M35 30 Q37 20 33 14" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round">
+      <animate attributeName="d" 
+        values="M35 30 Q37 20 33 14;M35 30 Q33 20 37 14;M35 30 Q37 20 33 14" 
+        dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Центральный пар -->
+    <path d="M50 26 Q52 16 48 10" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round">
+      <animate attributeName="d" 
+        values="M50 26 Q52 16 48 10;M50 26 Q48 16 52 10;M50 26 Q52 16 48 10" 
+        dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2.5s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Правый пар -->
+    <path d="M65 30 Q67 22 63 16" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round">
+      <animate attributeName="d" 
+        values="M65 30 Q67 22 63 16;M65 30 Q63 22 67 16;M65 30 Q67 22 63 16" 
+        dur="3.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.2;0.5" dur="3.5s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- Тень кастрюли -->
+  <ellipse cx="50" cy="78" rx="22" ry="5" fill="rgba(0,0,0,0.2)"/>
+  
+  <!-- Основная часть кастрюли -->
+  <rect x="28" y="42" width="44" height="34" rx="6" fill="url(#potGrad)" stroke="#BDBDBD" stroke-width="1.5"/>
+  
+  <!-- Ободок кастрюли -->
+  <rect x="26" y="40" width="48" height="6" rx="3" fill="url(#lidGrad)" stroke="#BDBDBD" stroke-width="1"/>
+  
+  <!-- Левая ручка -->
+  <rect x="18" y="50" width="12" height="8" rx="4" fill="#9E9E9E" stroke="#757575" stroke-width="1"/>
+  <rect x="20" y="51" width="8" height="6" rx="3" fill="#BDBDBD"/>
+  
+  <!-- Правая ручка -->
+  <rect x="70" y="50" width="12" height="8" rx="4" fill="#9E9E9E" stroke="#757575" stroke-width="1"/>
+  <rect x="72" y="51" width="8" height="6" rx="3" fill="#BDBDBD"/>
+  
+  <!-- Блик на кастрюле -->
+  <rect x="33" y="48" width="8" height="20" rx="4" fill="rgba(255,255,255,0.3)"/>
+  
+  <!-- Значок шеф-повара -->
+  <text x="50" y="63" font-size="18" text-anchor="middle" opacity="0.5">👨‍🍳</text>
+</svg>
